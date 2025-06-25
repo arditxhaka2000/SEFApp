@@ -1,15 +1,18 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<Shell
-    x:Class="SEFApp.AppShell"
-    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:SEFApp"
-    Shell.FlyoutBehavior="Disabled"
-    Title="SEFApp">
+<Shell x:Class="SEFApp.AppShell"
+       xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+       xmlns:local="clr-namespace:SEFApp.Views"
+       Title="SEF Manager">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <!-- Login Page -->
+    <ShellContent x:Name="LoginShellContent"
+                  Route="LoginPage"
+                  ContentTemplate="{DataTemplate local:LoginPage}" />
+
+    <!-- Main Page (placeholder) -->
+    <ShellContent x:Name="MainShellContent"
+                  Route="MainPage"
+                  ContentTemplate="{DataTemplate ContentPage}" />
 
 </Shell>

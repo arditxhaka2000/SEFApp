@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="SEFApp.Views.LoginPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="SEF Login"
+             BackgroundColor="#f0f2f5">
+
+    <ScrollView>
+        <StackLayout Padding="40" Spacing="20" VerticalOptions="CenterAndExpand">
+
+            <!-- App Logo/Title -->
+            <StackLayout Spacing="10">
+                <Label Text="SEF Manager" 
+                       FontSize="32" 
+                       FontAttributes="Bold" 
+                       TextColor="#1a73e8" 
+                       HorizontalOptions="Center"/>
+
+                <Label Text="Electronic Fiscal Software" 
+                       FontSize="16" 
+                       TextColor="#5f6368" 
+                       HorizontalOptions="Center"/>
+            </StackLayout>
+
+            <!-- Login Card -->
+            <Frame BackgroundColor="White" 
+                   CornerRadius="12" 
+                   HasShadow="True" 
+                   Padding="30"
+                   Margin="0,20">
+
+                <StackLayout Spacing="20">
+
+                    <Label Text="Welcome Back" 
+                           FontSize="24" 
+                           FontAttributes="Bold" 
+                           TextColor="#202124" 
+                           HorizontalOptions="Center"/>
+
+                    <!-- Username Field -->
+                    <StackLayout Spacing="5">
+                        <Label Text="Username" 
+                               FontSize="14" 
+                               TextColor="#3c4043"/>
+                        <Entry x:Name="UsernameEntry"
+                               Text="{Binding Username}"
+                               Placeholder="Enter your username"
+                               FontSize="16"
+                               BackgroundColor="#f8f9fa"
+                               TextColor="#202124"
+                               HeightRequest="50"/>
+                        <Label Text="{Binding UsernameError}" 
+                               TextColor="#d93025" 
+                               FontSize="12" 
+                               IsVisible="{Binding HasUsernameError}"/>
+                    </StackLayout>
+
+                    <!-- Password Field -->
+                    <StackLayout Spacing="5">
+                        <Label Text="Password" 
+                               FontSize="14" 
+                               TextColor="#3c4043"/>
+                        <Entry x:Name="PasswordEntry"
+                               Text="{Binding Password}"
+                               Placeholder="Enter your password"
+                               IsPassword="True"
+                               FontSize="16"
+                               BackgroundColor="#f8f9fa"
+                               TextColor="#202124"
+                               HeightRequest="50"/>
+                        <Label Text="{Binding PasswordError}" 
+                               TextColor="#d93025" 
+                               FontSize="12" 
+                               IsVisible="{Binding HasPasswordError}"/>
+                    </StackLayout>
+
+                    <!-- Remember Me -->
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <CheckBox IsChecked="{Binding RememberMe}" 
+                                  Color="#1a73e8"/>
+                        <Label Text="Remember me" 
+                               FontSize="14" 
+                               TextColor="#5f6368" 
+                               VerticalOptions="Center"/>
+                    </StackLayout>
+
+                    <!-- Login Button -->
+                    <Button Text="Sign In"
+                            Command="{Binding LoginCommand}"
+                            BackgroundColor="#1a73e8"
+                            TextColor="White"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            CornerRadius="6"
+                            HeightRequest="50"
+                            Margin="0,10,0,0"/>
+
+                    <!-- Loading Indicator -->
+                    <ActivityIndicator IsVisible="{Binding IsLoading}" 
+                                       IsRunning="{Binding IsLoading}" 
+                                       Color="#1a73e8" 
+                                       HeightRequest="30"/>
+
+                    <!-- Error Message -->
+                    <Label Text="{Binding LoginError}" 
+                           TextColor="#d93025" 
+                           FontSize="14" 
+                           HorizontalOptions="Center"
+                           IsVisible="{Binding HasLoginError}"/>
+
+                </StackLayout>
+            </Frame>
+
+            <!-- Info Text -->
+            <Label Text="First login automatically creates admin account" 
+                   FontSize="12" 
+                   TextColor="#5f6368" 
+                   HorizontalOptions="Center"
+                   Margin="0,20,0,0"/>
+
+        </StackLayout>
+    </ScrollView>
+</ContentPage>
