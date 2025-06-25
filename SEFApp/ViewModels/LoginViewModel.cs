@@ -11,7 +11,8 @@ namespace SEFApp.ViewModels
         private readonly INavigationService _navigationService;
         private readonly IPreferencesService _preferencesService;
 
-        public LoginViewModel(
+        public LoginViewModel
+            (
             IAuthenticationService authService,
             INavigationService navigationService,
             IPreferencesService preferencesService)
