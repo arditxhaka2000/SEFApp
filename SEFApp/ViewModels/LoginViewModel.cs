@@ -162,9 +162,9 @@ namespace SEFApp.ViewModels
                     RememberMe = RememberMe
                 };
 
-                var result = await _authService.LoginAsync(loginRequest);
+                var result = await _authService.LoginAsync(loginRequest.Username,loginRequest.Password);
 
-                if (result.IsSuccess)
+                if (result==true)
                 {
                     // Save credentials if remember me is checked
                     if (RememberMe)
@@ -177,11 +177,11 @@ namespace SEFApp.ViewModels
                     }
 
                     // Navigate to main app
-                    await _navigationService.NavigateToAsync("//MainPage");
+                    await _navigationService.NavigateToAsync("DashboardPage");
                 }
                 else
                 {
-                    LoginError = GetErrorMessage(result.ErrorCode);
+                    LoginError = GetErrorMessage(result.ToString());
                 }
             }
             catch (Exception ex)

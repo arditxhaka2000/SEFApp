@@ -15,7 +15,7 @@ namespace SEFApp.Views
         {
             InitializeComponent();
             _viewModel = viewModel;
-            BindingContext = _viewModel;  // Set it here instead of XAML
+            BindingContext = _viewModel; 
         }
 
         protected override void OnAppearing()

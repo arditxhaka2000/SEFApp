@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SEFApp.Views.DashboardPage"
+             Title="Dashboard"
+             BackgroundColor="#f0f2f5">
+
+	<ContentPage.ToolbarItems>
+		<ToolbarItem Text="Logout"
+                     IconImageSource="logout.png"
+                     Command="{Binding LogoutCommand}"
+                     Priority="0" />
+		<ToolbarItem Text="Refresh"
+                     IconImageSource="refresh.png"
+                     Command="{Binding RefreshCommand}"
+                     Priority="1" />
+	</ContentPage.ToolbarItems>
+	
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="20">
+
+            <!-- Header Section -->
+            <Frame Style="{StaticResource CardFrame}" Margin="0,10,0,0">
+                <StackLayout Spacing="10">
+                    <Label Text="Welcome to SEF Manager" 
+                           Style="{StaticResource HeaderLabel}"
+                           HorizontalOptions="Center"/>
+                    <Label Text="Electronic Fiscal Software Management System" 
+                           Style="{StaticResource BodyLabel}"
+                           HorizontalOptions="Center"/>
+                    <BoxView HeightRequest="1" 
+                             BackgroundColor="#e2e8f0" 
+                             Margin="0,10"/>
+                    <Label Text="{Binding CurrentDateTime, StringFormat='Last Updated: {0:MMM dd, yyyy HH:mm}'}" 
+                           Style="{StaticResource BodyLabel}"
+                           HorizontalOptions="Center"/>
+                </StackLayout>
+            </Frame>
+
+            <!-- Quick Stats Cards -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto" ColumnSpacing="10">
+
+                <!-- Transactions Card -->
+                <Frame Grid.Column="0" Style="{StaticResource CardFrame}">
+                    <StackLayout Spacing="5">
+                        <Label Text="📊" FontSize="30" HorizontalOptions="Center"/>
+                        <Label Text="Today's Transactions" 
+                               Style="{StaticResource SubHeaderLabel}"
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding TodayTransactions}" 
+                               FontSize="24"
+                               FontAttributes="Bold"
+                               TextColor="#3182ce"
+                               HorizontalOptions="Center"/>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Status Card -->
+                <Frame Grid.Column="1" Style="{StaticResource CardFrame}">
+                    <StackLayout Spacing="5">
+                        <Label Text="✅" FontSize="30" HorizontalOptions="Center"/>
+                        <Label Text="System Status" 
+                               Style="{StaticResource SubHeaderLabel}"
+                               HorizontalOptions="Center"/>
+                        <Label Text="{Binding SystemStatus}" 
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="#38a169"
+                               HorizontalOptions="Center"/>
+                    </StackLayout>
+                </Frame>
+
+            </Grid>
+
+            <!-- Information Section -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="15">
+                    <Label Text="System Information" 
+                           Style="{StaticResource SubHeaderLabel}"/>
+
+                    <StackLayout Spacing="8">
+                        <StackLayout Orientation="Horizontal" Spacing="10">
+                            <Label Text="📱" FontSize="16"/>
+                            <Label Text="App Version:" Style="{StaticResource BodyLabel}" FontAttributes="Bold"/>
+                            <Label Text="{Binding AppVersion}" Style="{StaticResource BodyLabel}"/>
+                        </StackLayout>
+
+                        <StackLayout Orientation="Horizontal" Spacing="10">
+                            <Label Text="🔧" FontSize="16"/>
+                            <Label Text="Platform:" Style="{StaticResource BodyLabel}" FontAttributes="Bold"/>
+                            <Label Text="{Binding Platform}" Style="{StaticResource BodyLabel}"/>
+                        </StackLayout>
+
+                        <StackLayout Orientation="Horizontal" Spacing="10">
+                            <Label Text="🌐" FontSize="16"/>
+                            <Label Text="Connection:" Style="{StaticResource BodyLabel}" FontAttributes="Bold"/>
+                            <Label Text="{Binding ConnectionStatus}" Style="{StaticResource BodyLabel}"/>
+                        </StackLayout>
+
+                        <StackLayout Orientation="Horizontal" Spacing="10">
+                            <Label Text="👤" FontSize="16"/>
+                            <Label Text="User:" Style="{StaticResource BodyLabel}" FontAttributes="Bold"/>
+                            <Label Text="{Binding CurrentUser}" Style="{StaticResource BodyLabel}"/>
+                        </StackLayout>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+
+            <!-- Quick Actions -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="15">
+                    <Label Text="Quick Actions" 
+                           Style="{StaticResource SubHeaderLabel}"/>
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+
+                        <Button Grid.Row="0" Grid.Column="0"
+                                Text="📝 New Transaction"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding NewTransactionCommand}"/>
+
+                        <Button Grid.Row="0" Grid.Column="1"
+                                Text="📋 View Reports"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding ViewReportsCommand}"/>
+
+                        <Button Grid.Row="1" Grid.Column="0"
+                                Text="⚙️ Settings"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding SettingsCommand}"/>
+
+                        <Button Grid.Row="1" Grid.Column="1"
+                                Text="🔄 Sync Data"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding SyncDataCommand}"/>
+                    </Grid>
+                </StackLayout>
+            </Frame>
+
+            <!-- Recent Activity -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="15">
+                    <Label Text="Recent Activity" 
+                           Style="{StaticResource SubHeaderLabel}"/>
+
+                    <CollectionView ItemsSource="{Binding RecentActivities}" HeightRequest="200">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="0,5" ColumnDefinitions="Auto,*,Auto">
+                                    <Label Grid.Column="0" 
+                                           Text="{Binding Icon}" 
+                                           FontSize="16" 
+                                           VerticalOptions="Center"/>
+                                    <StackLayout Grid.Column="1" Margin="10,0">
+                                        <Label Text="{Binding Title}" 
+                                               Style="{StaticResource BodyLabel}" 
+                                               FontAttributes="Bold"/>
+                                        <Label Text="{Binding Description}" 
+                                               Style="{StaticResource BodyLabel}" 
+                                               FontSize="12"/>
+                                    </StackLayout>
+                                    <Label Grid.Column="2" 
+                                           Text="{Binding Time}" 
+                                           Style="{StaticResource BodyLabel}" 
+                                           FontSize="12" 
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+        </StackLayout>
+    </ScrollView>
+
+</ContentPage>

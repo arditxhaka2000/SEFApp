@@ -1,33 +1,26 @@
-﻿using System.Text.Json;
+﻿using SEFApp.Services.Interfaces;
 using System.Security.Cryptography;
 using System.Text;
-using SEFApp.Services.Interfaces;
+using System.Text.Json;
 
 namespace SEFApp.Services
 {
     public class PreferencesService : IPreferencesService
     {
-        private const string APP_PREFIX = "SEFApp_";
-        private const string ENCRYPTION_KEY = "SEF_SECURE_KEY_2025"; // In production, use a proper key management system
-        private readonly HashSet<string> _keyRegistry = new();
+        private const string EncryptionKey = "SEFManager2024EncryptionKey123456"; // Should be configurable in production
 
         #region String Methods
         public async Task SetAsync(string key, string value)
         {
             try
             {
-                await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    Preferences.Set(prefKey, value ?? string.Empty);
-                    _keyRegistry.Add(key);
-                });
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Set string '{key}' = '{value?.Substring(0, Math.Min(value?.Length ?? 0, 20))}...'");
+                await Task.CompletedTask; // Make it async-compatible
+                Preferences.Set(key, value ?? string.Empty);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Set string preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences SetAsync (string) error: {ex.Message}");
+                throw;
             }
         }
 
@@ -35,40 +28,29 @@ namespace SEFApp.Services
         {
             try
             {
-                return await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    var value = Preferences.Get(prefKey, defaultValue ?? string.Empty);
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Get string '{key}' = '{value?.Substring(0, Math.Min(value?.Length ?? 0, 20))}...'");
-                    return value;
-                });
+                await Task.CompletedTask; // Make it async-compatible
+                return Preferences.Get(key, defaultValue ?? string.Empty);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get string preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetAsync (string) error: {ex.Message}");
                 return defaultValue ?? string.Empty;
             }
         }
-
-
+        #endregion
 
         #region Boolean Methods
         public async Task SetAsync(string key, bool value)
         {
             try
             {
-                await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    Preferences.Set(prefKey, value);
-                    _keyRegistry.Add(key);
-                });
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Set bool '{key}' = {value}");
+                await Task.CompletedTask;
+                Preferences.Set(key, value);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Set bool preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences SetAsync (bool) error: {ex.Message}");
+                throw;
             }
         }
 
@@ -76,17 +58,12 @@ namespace SEFApp.Services
         {
             try
             {
-                return await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    var value = Preferences.Get(prefKey, defaultValue);
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Get bool '{key}' = {value}");
-                    return value;
-                });
+                await Task.CompletedTask;
+                return Preferences.Get(key, defaultValue);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get bool preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetAsync (bool) error: {ex.Message}");
                 return defaultValue;
             }
         }
@@ -97,18 +74,13 @@ namespace SEFApp.Services
         {
             try
             {
-                await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    Preferences.Set(prefKey, value);
-                    _keyRegistry.Add(key);
-                });
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Set int '{key}' = {value}");
+                await Task.CompletedTask;
+                Preferences.Set(key, value);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Set int preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences SetAsync (int) error: {ex.Message}");
+                throw;
             }
         }
 
@@ -116,17 +88,12 @@ namespace SEFApp.Services
         {
             try
             {
-                return await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    var value = Preferences.Get(prefKey, defaultValue);
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Get int '{key}' = {value}");
-                    return value;
-                });
+                await Task.CompletedTask;
+                return Preferences.Get(key, defaultValue);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get int preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetAsync (int) error: {ex.Message}");
                 return defaultValue;
             }
         }
@@ -137,18 +104,13 @@ namespace SEFApp.Services
         {
             try
             {
-                await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    Preferences.Set(prefKey, value);
-                    _keyRegistry.Add(key);
-                });
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Set double '{key}' = {value}");
+                await Task.CompletedTask;
+                Preferences.Set(key, value);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Set double preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences SetAsync (double) error: {ex.Message}");
+                throw;
             }
         }
 
@@ -156,17 +118,12 @@ namespace SEFApp.Services
         {
             try
             {
-                return await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    var value = Preferences.Get(prefKey, defaultValue);
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Get double '{key}' = {value}");
-                    return value;
-                });
+                await Task.CompletedTask;
+                return Preferences.Get(key, defaultValue);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get double preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetAsync (double) error: {ex.Message}");
                 return defaultValue;
             }
         }
@@ -177,18 +134,13 @@ namespace SEFApp.Services
         {
             try
             {
-                await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    Preferences.Set(prefKey, value);
-                    _keyRegistry.Add(key);
-                });
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Set long '{key}' = {value}");
+                await Task.CompletedTask;
+                Preferences.Set(key, value.ToString());
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Set long preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences SetAsync (long) error: {ex.Message}");
+                throw;
             }
         }
 
@@ -196,17 +148,13 @@ namespace SEFApp.Services
         {
             try
             {
-                return await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    var value = Preferences.Get(prefKey, defaultValue);
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Get long '{key}' = {value}");
-                    return value;
-                });
+                await Task.CompletedTask;
+                var stringValue = Preferences.Get(key, defaultValue.ToString());
+                return long.TryParse(stringValue, out long result) ? result : defaultValue;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get long preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetAsync (long) error: {ex.Message}");
                 return defaultValue;
             }
         }
@@ -217,13 +165,13 @@ namespace SEFApp.Services
         {
             try
             {
-                var binaryValue = value.ToBinary();
-                await SetAsync(key + "_DateTime", binaryValue.ToString());
-                System.Diagnostics.Debug.WriteLine($"Preferences: Set DateTime '{key}' = {value}");
+                await Task.CompletedTask;
+                Preferences.Set(key, value.ToString("O")); // ISO 8601 format
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Set DateTime preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences SetAsync (DateTime) error: {ex.Message}");
+                throw;
             }
         }
 
@@ -231,20 +179,13 @@ namespace SEFApp.Services
         {
             try
             {
-                var storedValue = await GetAsync(key + "_DateTime", string.Empty);
-                if (!string.IsNullOrEmpty(storedValue) && long.TryParse(storedValue, out long binary))
-                {
-                    var value = DateTime.FromBinary(binary);
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Get DateTime '{key}' = {value}");
-                    return value;
-                }
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Get DateTime '{key}' = {defaultValue} (default)");
-                return defaultValue;
+                await Task.CompletedTask;
+                var stringValue = Preferences.Get(key, defaultValue.ToString("O"));
+                return DateTime.TryParse(stringValue, out DateTime result) ? result : defaultValue;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get DateTime preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetAsync (DateTime) error: {ex.Message}");
                 return defaultValue;
             }
         }
@@ -255,24 +196,20 @@ namespace SEFApp.Services
         {
             try
             {
+                await Task.CompletedTask;
                 if (value == null)
                 {
-                    await RemoveAsync(key);
+                    Preferences.Remove(key);
                     return;
                 }
 
-                var json = JsonSerializer.Serialize(value, new JsonSerializerOptions
-                {
-                    WriteIndented = false,
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
-
-                await SetAsync(key + "_Object", json);
-                System.Diagnostics.Debug.WriteLine($"Preferences: Set object '{key}' of type {typeof(T).Name}");
+                var jsonString = JsonSerializer.Serialize(value);
+                Preferences.Set(key, jsonString);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Set object preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences SetObjectAsync error: {ex.Message}");
+                throw;
             }
         }
 
@@ -280,24 +217,17 @@ namespace SEFApp.Services
         {
             try
             {
-                var json = await GetAsync(key + "_Object", string.Empty);
-                if (string.IsNullOrEmpty(json))
-                {
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Get object '{key}' = default (no data)");
+                await Task.CompletedTask;
+                var jsonString = Preferences.Get(key, string.Empty);
+
+                if (string.IsNullOrEmpty(jsonString))
                     return defaultValue;
-                }
 
-                var value = JsonSerializer.Deserialize<T>(json, new JsonSerializerOptions
-                {
-                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-                });
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Get object '{key}' of type {typeof(T).Name}");
-                return value;
+                return JsonSerializer.Deserialize<T>(jsonString);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get object preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetObjectAsync error: {ex.Message}");
                 return defaultValue;
             }
         }
@@ -308,19 +238,20 @@ namespace SEFApp.Services
         {
             try
             {
+                await Task.CompletedTask;
                 if (values == null)
                 {
-                    await RemoveAsync(key);
+                    Preferences.Remove(key);
                     return;
                 }
 
-                var json = JsonSerializer.Serialize(values);
-                await SetAsync(key + "_StringList", json);
-                System.Diagnostics.Debug.WriteLine($"Preferences: Set string list '{key}' with {values.Count} items");
+                var jsonString = JsonSerializer.Serialize(values);
+                Preferences.Set(key, jsonString);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Set string list preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences SetStringListAsync error: {ex.Message}");
+                throw;
             }
         }
 
@@ -328,20 +259,17 @@ namespace SEFApp.Services
         {
             try
             {
-                var json = await GetAsync(key + "_StringList", string.Empty);
-                if (string.IsNullOrEmpty(json))
-                {
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Get string list '{key}' = default (no data)");
-                    return defaultValue ?? new List<string>();
-                }
+                await Task.CompletedTask;
+                var jsonString = Preferences.Get(key, string.Empty);
 
-                var value = JsonSerializer.Deserialize<List<string>>(json);
-                System.Diagnostics.Debug.WriteLine($"Preferences: Get string list '{key}' with {value?.Count ?? 0} items");
-                return value ?? defaultValue ?? new List<string>();
+                if (string.IsNullOrEmpty(jsonString))
+                    return defaultValue ?? new List<string>();
+
+                return JsonSerializer.Deserialize<List<string>>(jsonString) ?? defaultValue ?? new List<string>();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get string list preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetStringListAsync error: {ex.Message}");
                 return defaultValue ?? new List<string>();
             }
         }
@@ -352,24 +280,13 @@ namespace SEFApp.Services
         {
             try
             {
-                await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    Preferences.Remove(prefKey);
-
-                    // Also remove related keys
-                    Preferences.Remove(prefKey + "_DateTime");
-                    Preferences.Remove(prefKey + "_Object");
-                    Preferences.Remove(prefKey + "_StringList");
-
-                    _keyRegistry.Remove(key);
-                });
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Removed '{key}'");
+                await Task.CompletedTask;
+                Preferences.Remove(key);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Remove preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences RemoveAsync error: {ex.Message}");
+                throw;
             }
         }
 
@@ -377,19 +294,16 @@ namespace SEFApp.Services
         {
             try
             {
-                if (keys == null || keys.Length == 0)
-                    return;
-
+                await Task.CompletedTask;
                 foreach (var key in keys)
                 {
-                    await RemoveAsync(key);
+                    Preferences.Remove(key);
                 }
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Removed {keys.Length} keys");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Remove multiple preferences error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences RemoveAsync (multiple) error: {ex.Message}");
+                throw;
             }
         }
 
@@ -397,17 +311,13 @@ namespace SEFApp.Services
         {
             try
             {
-                await Task.Run(() =>
-                {
-                    Preferences.Clear();
-                    _keyRegistry.Clear();
-                });
-
-                System.Diagnostics.Debug.WriteLine("Preferences: Cleared all preferences");
+                await Task.CompletedTask;
+                Preferences.Clear();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Clear all preferences error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences ClearAllAsync error: {ex.Message}");
+                throw;
             }
         }
 
@@ -415,17 +325,12 @@ namespace SEFApp.Services
         {
             try
             {
-                return await Task.Run(() =>
-                {
-                    var prefKey = GetKey(key);
-                    var exists = Preferences.ContainsKey(prefKey);
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Key '{key}' exists = {exists}");
-                    return exists;
-                });
+                await Task.CompletedTask;
+                return Preferences.ContainsKey(key);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Contains key error for '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences ContainsKeyAsync error: {ex.Message}");
                 return false;
             }
         }
@@ -434,16 +339,15 @@ namespace SEFApp.Services
         {
             try
             {
-                return await Task.Run(() =>
-                {
-                    var keys = _keyRegistry.ToList();
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Retrieved {keys.Count} keys");
-                    return keys;
-                });
+                await Task.CompletedTask;
+                // Note: .NET MAUI Preferences doesn't have a direct way to get all keys
+                // This is a limitation of the platform. We'd need to implement our own storage for this.
+                System.Diagnostics.Debug.WriteLine("GetAllKeysAsync: Not supported by platform Preferences");
+                return new List<string>();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get all keys error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetAllKeysAsync error: {ex.Message}");
                 return new List<string>();
             }
         }
@@ -452,16 +356,14 @@ namespace SEFApp.Services
         {
             try
             {
-                return await Task.Run(() =>
-                {
-                    var count = _keyRegistry.Count;
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Total count = {count}");
-                    return count;
-                });
+                await Task.CompletedTask;
+                // Note: .NET MAUI Preferences doesn't have a direct way to count keys
+                System.Diagnostics.Debug.WriteLine("GetCountAsync: Not supported by platform Preferences");
+                return 0;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get count error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetCountAsync error: {ex.Message}");
                 return 0;
             }
         }
@@ -472,19 +374,20 @@ namespace SEFApp.Services
         {
             try
             {
+                await Task.CompletedTask;
                 if (string.IsNullOrEmpty(value))
                 {
-                    await RemoveAsync(key + "_Secure");
+                    Preferences.Remove(key);
                     return;
                 }
 
-                var encryptedValue = EncryptString(value);
-                await SetAsync(key + "_Secure", encryptedValue);
-                System.Diagnostics.Debug.WriteLine($"Preferences: Set secure '{key}' (encrypted)");
+                var encryptedValue = EncryptString(value, EncryptionKey);
+                Preferences.Set(key, encryptedValue);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Set secure preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences SetSecureAsync error: {ex.Message}");
+                throw;
             }
         }
 
@@ -492,20 +395,17 @@ namespace SEFApp.Services
         {
             try
             {
-                var encryptedValue = await GetAsync(key + "_Secure", string.Empty);
-                if (string.IsNullOrEmpty(encryptedValue))
-                {
-                    System.Diagnostics.Debug.WriteLine($"Preferences: Get secure '{key}' = default (no data)");
-                    return defaultValue;
-                }
+                await Task.CompletedTask;
+                var encryptedValue = Preferences.Get(key, string.Empty);
 
-                var decryptedValue = DecryptString(encryptedValue);
-                System.Diagnostics.Debug.WriteLine($"Preferences: Get secure '{key}' (decrypted)");
-                return decryptedValue;
+                if (string.IsNullOrEmpty(encryptedValue))
+                    return defaultValue;
+
+                return DecryptString(encryptedValue, EncryptionKey);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get secure preference error for key '{key}': {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences GetSecureAsync error: {ex.Message}");
                 return defaultValue;
             }
         }
@@ -516,38 +416,17 @@ namespace SEFApp.Services
         {
             try
             {
-                var exportData = new Dictionary<string, object>();
-                var keys = await GetAllKeysAsync();
+                await Task.CompletedTask;
+                // Note: This is limited since we can't enumerate all keys in MAUI Preferences
+                // You'd need to maintain a list of known keys or implement custom storage
+                var exportData = new Dictionary<string, string>();
 
-                foreach (var key in keys)
-                {
-                    // Skip secure keys in export for security
-                    if (key.EndsWith("_Secure"))
-                        continue;
-
-                    var prefKey = GetKey(key);
-                    if (Preferences.ContainsKey(prefKey))
-                    {
-                        // Try to get the raw value
-                        var stringValue = Preferences.Get(prefKey, string.Empty);
-                        if (!string.IsNullOrEmpty(stringValue))
-                        {
-                            exportData[key] = stringValue;
-                        }
-                    }
-                }
-
-                var json = JsonSerializer.Serialize(exportData, new JsonSerializerOptions
-                {
-                    WriteIndented = true
-                });
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Exported {exportData.Count} preferences to JSON");
-                return json;
+                System.Diagnostics.Debug.WriteLine("ExportToJsonAsync: Limited implementation - cannot enumerate all keys");
+                return JsonSerializer.Serialize(exportData);
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Export to JSON error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences ExportToJsonAsync error: {ex.Message}");
                 return "{}";
             }
         }
@@ -556,69 +435,59 @@ namespace SEFApp.Services
         {
             try
             {
+                await Task.CompletedTask;
                 if (string.IsNullOrEmpty(jsonData))
                     return;
 
-                var importData = JsonSerializer.Deserialize<Dictionary<string, object>>(jsonData);
+                var importData = JsonSerializer.Deserialize<Dictionary<string, string>>(jsonData);
                 if (importData == null)
                     return;
 
-                int importedCount = 0;
                 foreach (var kvp in importData)
                 {
-                    var key = kvp.Key;
-                    var value = kvp.Value?.ToString() ?? string.Empty;
-
-                    // Skip if key exists and not overwriting
-                    if (!overwriteExisting && await ContainsKeyAsync(key))
+                    if (!overwriteExisting && Preferences.ContainsKey(kvp.Key))
                         continue;
 
-                    await SetAsync(key, value);
-                    importedCount++;
+                    Preferences.Set(kvp.Key, kvp.Value);
                 }
-
-                System.Diagnostics.Debug.WriteLine($"Preferences: Imported {importedCount} preferences from JSON");
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Import from JSON error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Preferences ImportFromJsonAsync error: {ex.Message}");
+                throw;
             }
         }
         #endregion
 
         #region Private Helper Methods
-        /// <summary>
-        /// Add app prefix to keys to avoid conflicts
-        /// </summary>
-        private string GetKey(string key)
-        {
-            return $"{APP_PREFIX}{key}";
-        }
-
-        /// <summary>
-        /// Simple string encryption (for demonstration - use proper encryption in production)
-        /// </summary>
-        private string EncryptString(string plainText)
+        private static string EncryptString(string plainText, string key)
         {
             try
             {
-                var data = Encoding.UTF8.GetBytes(plainText);
-                var key = Encoding.UTF8.GetBytes(ENCRYPTION_KEY.PadRight(32).Substring(0, 32));
+                byte[] iv = new byte[16];
+                byte[] array;
 
-                using var aes = Aes.Create();
-                aes.Key = key;
-                aes.Mode = CipherMode.CBC;
-                aes.GenerateIV();
+                using (Aes aes = Aes.Create())
+                {
+                    aes.Key = Encoding.UTF8.GetBytes(key.PadRight(32).Substring(0, 32));
+                    aes.IV = iv;
 
-                using var encryptor = aes.CreateEncryptor();
-                var encryptedData = encryptor.TransformFinalBlock(data, 0, data.Length);
+                    ICryptoTransform encryptor = aes.CreateEncryptor(aes.Key, aes.IV);
 
-                // Combine IV and encrypted data
-                var result = new byte[aes.IV.Length + encryptedData.Length];
-                Array.Copy(aes.IV, 0, result, 0, aes.IV.Length);
-                Array.Copy(encryptedData, 0, result, aes.IV.Length, encryptedData.Length);
+                    using (MemoryStream memoryStream = new MemoryStream())
+                    {
+                        using (CryptoStream cryptoStream = new CryptoStream(memoryStream, encryptor, CryptoStreamMode.Write))
+                        {
+                            using (StreamWriter streamWriter = new StreamWriter(cryptoStream))
+                            {
+                                streamWriter.Write(plainText);
+                            }
+                            array = memoryStream.ToArray();
+                        }
+                    }
+                }
 
-                return Convert.ToBase64String(result);
+                return Convert.ToBase64String(array);
             }
             catch (Exception ex)
             {
@@ -627,33 +496,30 @@ namespace SEFApp.Services
             }
         }
 
-        /// <summary>
-        /// Simple string decryption (for demonstration - use proper encryption in production)
-        /// </summary>
-        private string DecryptString(string cipherText)
+        private static string DecryptString(string cipherText, string key)
         {
             try
             {
-                var data = Convert.FromBase64String(cipherText);
-                var key = Encoding.UTF8.GetBytes(ENCRYPTION_KEY.PadRight(32).Substring(0, 32));
+                byte[] iv = new byte[16];
+                byte[] buffer = Convert.FromBase64String(cipherText);
 
-                using var aes = Aes.Create();
-                aes.Key = key;
-                aes.Mode = CipherMode.CBC;
+                using (Aes aes = Aes.Create())
+                {
+                    aes.Key = Encoding.UTF8.GetBytes(key.PadRight(32).Substring(0, 32));
+                    aes.IV = iv;
+                    ICryptoTransform decryptor = aes.CreateDecryptor(aes.Key, aes.IV);
 
-                // Extract IV
-                var iv = new byte[16];
-                Array.Copy(data, 0, iv, 0, 16);
-                aes.IV = iv;
-
-                // Extract encrypted data
-                var encryptedData = new byte[data.Length - 16];
-                Array.Copy(data, 16, encryptedData, 0, encryptedData.Length);
-
-                using var decryptor = aes.CreateDecryptor();
-                var decryptedData = decryptor.TransformFinalBlock(encryptedData, 0, encryptedData.Length);
-
-                return Encoding.UTF8.GetString(decryptedData);
+                    using (MemoryStream memoryStream = new MemoryStream(buffer))
+                    {
+                        using (CryptoStream cryptoStream = new CryptoStream(memoryStream, decryptor, CryptoStreamMode.Read))
+                        {
+                            using (StreamReader streamReader = new StreamReader(cryptoStream))
+                            {
+                                return streamReader.ReadToEnd();
+                            }
+                        }
+                    }
+                }
             }
             catch (Exception ex)
             {
@@ -663,5 +529,4 @@ namespace SEFApp.Services
         }
         #endregion
     }
-    #endregion
 }

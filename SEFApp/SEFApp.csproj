@@ -57,10 +57,17 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<PackageReference Include="Microsoft.Data.Sqlite.Core" Version="9.0.6" />
 		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.6" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
+		<PackageReference Include="sqlite-net-pcl" Version="1.9.172" />
+		<PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.11" />
+		<PackageReference Include="SQLitePCLRaw.bundle_sqlcipher" Version="1.1.14" />
+		<PackageReference Include="SQLitePCLRaw.core" Version="2.1.11" />
+		<PackageReference Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.11" />
+		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.6" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -75,7 +82,22 @@
 	</ItemGroup>
 
 	<ItemGroup>
+	  <Compile Update="Views\DashboardPage.xaml.cs">
+	    <DependentUpon>DashboardPage.xaml</DependentUpon>
+	  </Compile>
+	  <Compile Update="Views\SettingsView.xaml.cs">
+	    <DependentUpon>SettingsView.xaml</DependentUpon>
+	  </Compile>
+	</ItemGroup>
+
+	<ItemGroup>
+	  <MauiXaml Update="Views\DashboardPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
 	  <MauiXaml Update="Views\LoginPage.xaml">
+	    <Generator>MSBuild:Compile</Generator>
+	  </MauiXaml>
+	  <MauiXaml Update="Views\SettingsView.xaml">
 	    <Generator>MSBuild:Compile</Generator>
 	  </MauiXaml>
 	</ItemGroup>

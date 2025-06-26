@@ -27,13 +27,17 @@ public static class MauiProgram
         builder.Services.AddSingleton<IPreferencesService, PreferencesService>();
         builder.Services.AddSingleton<INavigationService, NavigationService>();
         builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
-
+        // Add Database Service
+        builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
+        builder.Services.AddSingleton<IAlertService, AlertService>();
         // Register ViewModels
         builder.Services.AddTransient<LoginViewModel>();
 
         // Register Views
         builder.Services.AddTransient<LoginPage>();
-
+        builder.Services.AddTransient<DashboardViewModel>();
+        builder.Services.AddTransient<DashboardPage>();
+        builder.Services.AddTransient<SettingsView>();
         // Register Converters
         builder.Services.AddSingleton<InvertedBoolConverter>();
 

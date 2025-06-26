@@ -3,16 +3,18 @@
        xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
        xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
        xmlns:local="clr-namespace:SEFApp.Views"
-       Title="SEF Manager">
+       Title="SEF Manager"
+       >
 
     <!-- Login Page -->
-    <ShellContent x:Name="LoginShellContent"
+    <ShellContent Title="Login" x:Name="LoginShellContent"
                   Route="LoginPage"
                   ContentTemplate="{DataTemplate local:LoginPage}" />
 
-    <!-- Main Page (placeholder) -->
-    <ShellContent x:Name="MainShellContent"
-                  Route="MainPage"
-                  ContentTemplate="{DataTemplate ContentPage}" />
+    <!-- Dashboard Page --><!--
+    <ShellContent Title="Dashboard" 
+                  x:Name="DashboardShellContent"
+                  Route="DashboardPage"
+                  ContentTemplate="{DataTemplate local:DashboardPage}" />-->
 
 </Shell>

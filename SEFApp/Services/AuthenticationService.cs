@@ -1,71 +1,78 @@
-﻿using SEFApp.Services.Interfaces;
-using SEFApp.ViewModels;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
+﻿using SEFApp.Models;
+using SEFApp.Models.Database;
+using SEFApp.Services.Interfaces;
 
 namespace SEFApp.Services
 {
     public class AuthenticationService : IAuthenticationService
     {
         private readonly IPreferencesService _preferencesService;
+        private readonly IDatabaseService _databaseService;
+        private User _currentUser;
 
-        // Remove HttpClient dependency for now
-        public AuthenticationService(IPreferencesService preferencesService)
+        public AuthenticationService(IPreferencesService preferencesService, IDatabaseService databaseService)
         {
             _preferencesService = preferencesService;
+            _databaseService = databaseService;
         }
 
-        public async Task<LoginResult> LoginAsync(LoginRequest request)
+        public async Task<bool> LoginAsync(string username, string password)
         {
             try
             {
-                // Check if this is the first account (admin setup)
-                var isFirstAccount = await IsFirstAccountAsync();
+                System.Diagnostics.Debug.WriteLine($"Attempting login for user: {username}");
 
-                if (isFirstAccount)
+                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 {
-                    return await CreateAdminAccountAsync(request);
+                    System.Diagnostics.Debug.WriteLine("Login failed: Username or password is empty");
+                    return false;
                 }
 
-                // Check against stored admin credentials
-                var storedUsername = await _preferencesService.GetAsync("admin_username", string.Empty);
-                var storedPasswordHash = await _preferencesService.GetAsync("admin_password", string.Empty);
-
-                if (request.Username == storedUsername && VerifyPassword(request.Password, storedPasswordHash))
+                // Setup database encryption for this user BEFORE validation
+                await _databaseService.SetEncryptionForUser(username, password);
+                var isValid = await _databaseService.ValidatePasswordAsync(username, password);
+                if (isValid)
                 {
-                    var adminUser = new UserInfo
-                    {
-                        Id = "admin-001",
-                        Username = request.Username,
-                        FullName = "Administrator",
-                        Role = UserRole.Administrator,
-                        CreatedDate = DateTime.Now,
-                        IsFirstAccount = true
-                    };
+                    // Get user details
+                    var user = await _databaseService.GetUserByUsernameAsync(username);
 
-                    var token = GenerateToken(adminUser);
-                    await _preferencesService.SetAsync("auth_token", token);
-                    await _preferencesService.SetAsync("user_info", JsonSerializer.Serialize(adminUser));
-
-                    return new LoginResult
+                    if (user != null && user.IsActive)
                     {
-                        IsSuccess = true,
-                        Token = token,
-                        User = adminUser
-                    };
+                        _currentUser = user;
+
+                        // Update last login date
+                        user.LastLoginDate = DateTime.Now;
+                        await _databaseService.UpdateUserAsync(user);
+
+                        // Store authentication state
+                        await _preferencesService.SetAsync("IsAuthenticated", true);
+                        await _preferencesService.SetAsync("CurrentUserId", user.Id);
+                        await _preferencesService.SetAsync("CurrentUsername", user.Username);
+                        await _preferencesService.SetAsync("LoginTime", DateTime.Now);
+
+                        // Log the login
+                        await _databaseService.LogActionAsync("Users", "LOGIN", user.Id.ToString(), null,
+                            new { LoginTime = DateTime.Now, IPAddress = "Local" }, user.Id);
+
+                        System.Diagnostics.Debug.WriteLine($"Login successful for user: {username}");
+                        return true;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Login failed: User not found or inactive");
+                    }
+                }
+                else
+                {
+                    System.Diagnostics.Debug.WriteLine("Login failed: Invalid credentials");
                 }
 
-                return new LoginResult
-                {
-                    IsSuccess = false,
-                    ErrorCode = "INVALID_CREDENTIALS"
-                };
+                return false;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Login error: {ex.Message}");
-                return new LoginResult { IsSuccess = false, ErrorCode = "SERVER_ERROR" };
+                return false;
             }
         }
 
@@ -73,8 +80,22 @@ namespace SEFApp.Services
         {
             try
             {
-                await _preferencesService.RemoveAsync("auth_token");
-                await _preferencesService.RemoveAsync("user_info");
+                if (_currentUser != null)
+                {
+                    // Log the logout
+                    await _databaseService.LogActionAsync("Users", "LOGOUT", _currentUser.Id.ToString(), null,
+                        new { LogoutTime = DateTime.Now }, _currentUser.Id);
+                }
+
+                // Clear authentication state
+                await _preferencesService.RemoveAsync("IsAuthenticated");
+                await _preferencesService.RemoveAsync("CurrentUserId");
+                await _preferencesService.RemoveAsync("CurrentUsername");
+                await _preferencesService.RemoveAsync("LoginTime");
+
+                _currentUser = null;
+
+                System.Diagnostics.Debug.WriteLine("Logout successful");
                 return true;
             }
             catch (Exception ex)
@@ -86,113 +107,148 @@ namespace SEFApp.Services
 
         public async Task<bool> IsAuthenticatedAsync()
         {
-            var token = await _preferencesService.GetAsync("auth_token", string.Empty);
-            return !string.IsNullOrEmpty(token);
-        }
-
-        public async Task<UserInfo> GetCurrentUserAsync()
-        {
             try
             {
-                var userJson = await _preferencesService.GetAsync("user_info", string.Empty);
-                if (!string.IsNullOrEmpty(userJson))
+                var isAuthenticated = await _preferencesService.GetAsync("IsAuthenticated", false);
+                var userId = await _preferencesService.GetAsync("CurrentUserId", 0);
+
+                if (isAuthenticated && userId > 0)
                 {
-                    return JsonSerializer.Deserialize<UserInfo>(userJson);
+                    // Verify user still exists and is active
+                    var user = await _databaseService.GetUserByIdAsync(userId);
+                    if (user != null && user.IsActive)
+                    {
+                        _currentUser = user;
+                        return true;
+                    }
+                    else
+                    {
+                        // User no longer exists or is inactive, clear auth state
+                        await LogoutAsync();
+                    }
                 }
+
+                return false;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Get current user error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"IsAuthenticated check error: {ex.Message}");
+                return false;
             }
-
-            return null;
         }
 
-        private async Task<bool> IsFirstAccountAsync()
-        {
-            var hasAccounts = await _preferencesService.GetAsync("has_accounts", false);
-            return !hasAccounts;
-        }
-
-        private async Task<LoginResult> CreateAdminAccountAsync(LoginRequest request)
+        public async Task<User> GetCurrentUserAsync()
         {
             try
             {
-                // Validate admin account creation
-                if (string.IsNullOrWhiteSpace(request.Username) || request.Username.Length < 3)
+                if (_currentUser != null)
+                    return _currentUser;
+
+                var userId = await _preferencesService.GetAsync("CurrentUserId", 0);
+                if (userId > 0)
                 {
-                    return new LoginResult { IsSuccess = false, ErrorCode = "INVALID_USERNAME" };
+                    _currentUser = await _databaseService.GetUserByIdAsync(userId);
                 }
 
-                if (string.IsNullOrWhiteSpace(request.Password) || request.Password.Length < 4)
-                {
-                    return new LoginResult { IsSuccess = false, ErrorCode = "INVALID_PASSWORD" };
-                }
-
-                // Create the first admin account
-                var adminUser = new UserInfo
-                {
-                    Id = "admin-001",
-                    Username = request.Username,
-                    FullName = "Administrator",
-                    Role = UserRole.Administrator,
-                    CreatedDate = DateTime.Now,
-                    IsFirstAccount = true
-                };
-
-                // Store admin credentials
-                var hashedPassword = HashPassword(request.Password);
-                await _preferencesService.SetAsync("admin_username", request.Username);
-                await _preferencesService.SetAsync("admin_password", hashedPassword);
-                await _preferencesService.SetAsync("has_accounts", true);
-                await _preferencesService.SetAsync("admin_created_date", DateTime.Now.ToString());
-
-                // Generate token for admin
-                var token = GenerateToken(adminUser);
-                await _preferencesService.SetAsync("auth_token", token);
-                await _preferencesService.SetAsync("user_info", JsonSerializer.Serialize(adminUser));
-
-                return new LoginResult
-                {
-                    IsSuccess = true,
-                    Token = token,
-                    User = adminUser
-                };
+                return _currentUser;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"Admin creation error: {ex.Message}");
-                return new LoginResult { IsSuccess = false, ErrorCode = "ADMIN_CREATION_FAILED" };
+                System.Diagnostics.Debug.WriteLine($"GetCurrentUser error: {ex.Message}");
+                return null;
             }
         }
 
-        private string GenerateToken(UserInfo user)
+        public async Task<bool> ChangePasswordAsync(string currentPassword, string newPassword)
         {
-            var tokenData = new
+            try
             {
-                UserId = user.Id,
-                Username = user.Username,
-                Role = user.Role.ToString(),
-                IssuedAt = DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
-                ExpiresAt = DateTimeOffset.UtcNow.AddDays(30).ToUnixTimeSeconds()
-            };
+                if (_currentUser == null)
+                    return false;
 
-            var tokenJson = JsonSerializer.Serialize(tokenData);
-            var tokenBytes = Encoding.UTF8.GetBytes(tokenJson);
-            return Convert.ToBase64String(tokenBytes);
+                // Verify current password
+                var isCurrentPasswordValid = await _databaseService.ValidatePasswordAsync(_currentUser.Username, currentPassword);
+                if (!isCurrentPasswordValid)
+                    return false;
+
+                // Update password
+                var success = await _databaseService.UpdatePasswordAsync(_currentUser.Id, newPassword);
+
+                if (success)
+                {
+                    // Log password change
+                    await _databaseService.LogActionAsync("Users", "PASSWORD_CHANGE", _currentUser.Id.ToString(), null,
+                        new { ChangeTime = DateTime.Now }, _currentUser.Id);
+                }
+
+                return success;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Change password error: {ex.Message}");
+                return false;
+            }
         }
 
-        private string HashPassword(string password)
+        public async Task<bool> RegisterUserAsync(string username, string password, string fullName, string role = "User")
         {
-            using var sha256 = SHA256.Create();
-            var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password + "SEF_SALT"));
-            return Convert.ToBase64String(hashedBytes);
+            try
+            {
+                // Check if username already exists
+                var existingUser = await _databaseService.GetUserByUsernameAsync(username);
+                if (existingUser != null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Registration failed: Username already exists");
+                    return false;
+                }
+
+                // Create new user
+                var newUser = new User
+                {
+                    Username = username,
+                    FullName = fullName,
+                    Role = role,
+                    IsActive = true,
+                    CreatedDate = DateTime.Now
+                };
+
+                var createdUser = await _databaseService.CreateUserAsync(newUser, password);
+
+                System.Diagnostics.Debug.WriteLine($"User registered successfully: {username}");
+                return createdUser != null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Registration error: {ex.Message}");
+                return false;
+            }
         }
 
-        private bool VerifyPassword(string password, string hashedPassword)
+        public async Task<List<User>> GetAllUsersAsync()
         {
-            var hashToVerify = HashPassword(password);
-            return hashToVerify == hashedPassword;
+            try
+            {
+                return await _databaseService.GetAllUsersAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetAllUsers error: {ex.Message}");
+                return new List<User>();
+            }
+        }
+
+        public async Task<bool> IsFirstRunAsync()
+        {
+            try
+            {
+                var users = await _databaseService.GetAllUsersAsync();
+                return users.Count == 0;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"IsFirstRun check error: {ex.Message}");
+                return true; // Assume first run on error
+            }
         }
     }
 }
