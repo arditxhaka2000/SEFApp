@@ -23,8 +23,8 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
-        // Initialize SQLCipher
-        SQLitePCL.Batteries_V2.Init();
+        // SQLCipher initialization - let sqlite-net-sqlcipher handle it automatically
+        // No manual initialization needed
 
         // Register Services (no HttpClient needed for local auth)
         builder.Services.AddSingleton<IPreferencesService, PreferencesService>();
@@ -43,7 +43,6 @@ public static class MauiProgram
         builder.Services.AddTransient<SettingsView>();
         // Register Converters
         builder.Services.AddSingleton<InvertedBoolConverter>();
-
 
         return builder.Build();
     }

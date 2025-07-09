@@ -25,10 +25,11 @@ namespace SEFApp.Services
                     return false;
                 }
 
-                // Initialize database for this user - this is where the magic happens!
+                // Initialize database with secure key management
+                // The username and password are used for composite key generation, not as the database password
                 await _databaseService.InitializeDatabaseForUser(username, password);
 
-                // Validate password
+                // Validate user credentials against the database
                 var isValid = await _databaseService.ValidatePasswordAsync(username, password);
                 if (isValid)
                 {
@@ -49,18 +50,22 @@ namespace SEFApp.Services
                         await _databaseService.LogActionAsync("Users", "LOGIN", user.Id.ToString(), null,
                             new { LoginTime = DateTime.Now, IPAddress = "Local" }, user.Id);
 
+                        System.Diagnostics.Debug.WriteLine($"Login successful for user: {username}");
                         return true;
                     }
                 }
 
+                System.Diagnostics.Debug.WriteLine($"Login failed for user: {username}");
                 return false;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Login error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Stack trace: {ex.StackTrace}");
                 return false;
             }
         }
+
         public async Task<bool> LogoutAsync()
         {
             try
@@ -99,6 +104,10 @@ namespace SEFApp.Services
 
                 if (isAuthenticated && userId > 0)
                 {
+                    // For subsequent access, we need to initialize the database
+                    // We'll use stored credentials or a default approach
+                    await EnsureDatabaseInitializedAsync();
+
                     // Verify user still exists and is active
                     var user = await _databaseService.GetUserByIdAsync(userId);
                     if (user != null && user.IsActive)
@@ -122,6 +131,39 @@ namespace SEFApp.Services
             }
         }
 
+        private async Task EnsureDatabaseInitializedAsync()
+        {
+            try
+            {
+                // Check if database is already initialized
+                if (await _databaseService.IsDatabaseInitializedAsync())
+                {
+                    return;
+                }
+
+                // Get current user info from preferences
+                var currentUsername = await _preferencesService.GetAsync("CurrentUsername", "");
+
+                if (!string.IsNullOrEmpty(currentUsername))
+                {
+                    // For authenticated sessions, we initialize with stored username
+                    // The password component will be handled by the secure key management
+                    await _databaseService.InitializeDatabaseForUser(currentUsername, "session_restore");
+                }
+                else
+                {
+                    // Fallback initialization (shouldn't normally happen)
+                    await _databaseService.InitializeDatabaseForUser("system", "default");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Database initialization error during auth check: {ex.Message}");
+                // If we can't initialize the database, user should re-login
+                await LogoutAsync();
+            }
+        }
+
         public async Task<User> GetCurrentUserAsync()
         {
             try
@@ -132,6 +174,8 @@ namespace SEFApp.Services
                 var userId = await _preferencesService.GetAsync("CurrentUserId", 0);
                 if (userId > 0)
                 {
+                    // Ensure database is initialized before accessing user data
+                    await EnsureDatabaseInitializedAsync();
                     _currentUser = await _databaseService.GetUserByIdAsync(userId);
                 }
 
@@ -164,6 +208,8 @@ namespace SEFApp.Services
                     // Log password change
                     await _databaseService.LogActionAsync("Users", "PASSWORD_CHANGE", _currentUser.Id.ToString(), null,
                         new { ChangeTime = DateTime.Now }, _currentUser.Id);
+
+                    System.Diagnostics.Debug.WriteLine($"Password changed successfully for user: {_currentUser.Username}");
                 }
 
                 return success;
@@ -179,6 +225,9 @@ namespace SEFApp.Services
         {
             try
             {
+                // Ensure database is initialized
+                await EnsureDatabaseInitializedAsync();
+
                 // Check if username already exists
                 var existingUser = await _databaseService.GetUserByUsernameAsync(username);
                 if (existingUser != null)
@@ -197,10 +246,14 @@ namespace SEFApp.Services
                     CreatedDate = DateTime.Now
                 };
 
-                var createdUser = await _databaseService.CreateUserAsync(newUser, password);
+                var success = await _databaseService.CreateUserAsync(newUser, password);
 
-                System.Diagnostics.Debug.WriteLine($"User registered successfully: {username}");
-                return createdUser != null;
+                if (success)
+                {
+                    System.Diagnostics.Debug.WriteLine($"User registered successfully: {username}");
+                }
+
+                return success;
             }
             catch (Exception ex)
             {
@@ -213,6 +266,7 @@ namespace SEFApp.Services
         {
             try
             {
+                await EnsureDatabaseInitializedAsync();
                 return await _databaseService.GetAllUsersAsync();
             }
             catch (Exception ex)

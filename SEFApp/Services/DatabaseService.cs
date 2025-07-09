@@ -1,7 +1,7 @@
-﻿using SQLite;
-using SEFApp.Models;
+﻿using SEFApp.Models;
 using SEFApp.Models.Database;
 using SEFApp.Services.Interfaces;
+using SQLite;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -10,240 +10,145 @@ namespace SEFApp.Services
 {
     public class DatabaseService : IDatabaseService
     {
-        private readonly string _encryptedDatabasePath;
-        private readonly string _workingDatabasePath;
+        private readonly string _databasePath;
+        private readonly string _keyFilePath;
         private SQLiteAsyncConnection _database;
-        private string _encryptionKey;
         private bool _isInitialized = false;
-        private bool _isDatabaseLoaded = false;
 
         public DatabaseService()
         {
-            // This file will always be encrypted and unreadable
-            _encryptedDatabasePath = Path.Combine(FileSystem.AppDataDirectory, "sefmanager.encrypted");
+            _databasePath = Path.Combine(FileSystem.AppDataDirectory, "sefmanager.db");
+            _keyFilePath = Path.Combine(FileSystem.AppDataDirectory, "db.key");
 
-            // This is a temp file that gets deleted when app closes
-            _workingDatabasePath = Path.Combine(FileSystem.CacheDirectory, $"working_{Guid.NewGuid()}.db");
+            System.Diagnostics.Debug.WriteLine($"Database path: {_databasePath}");
+            System.Diagnostics.Debug.WriteLine($"Key file path: {_keyFilePath}");
         }
 
         public async Task InitializeDatabaseForUser(string username, string password)
         {
-            if (_isDatabaseLoaded) return;
-
             try
             {
-                _encryptionKey = GenerateEncryptionKey(username, password);
+                System.Diagnostics.Debug.WriteLine($"Initializing database for user: {username}");
 
-                if (File.Exists(_encryptedDatabasePath))
-                {
-                    await LoadEncryptedDatabase();
-                }
-                else
-                {
-                    await CreateNewDatabase();
-                }
+                // Get or create the database encryption key
+                var dbKey = await GetOrCreateDatabaseKeyAsync();
 
-                // Connect to the working database
-                _database = new SQLiteAsyncConnection(_workingDatabasePath);
+                System.Diagnostics.Debug.WriteLine($"Using database key: {dbKey}");
+
+                // Create SQLite connection with encryption
+                var connectionString = new SQLiteConnectionString(
+                    databasePath: _databasePath,
+                    storeDateTimeAsTicks: true,
+                    key: dbKey);
+
+                _database = new SQLiteAsyncConnection(connectionString);
 
                 await InitializeDatabaseAsync();
-                _isDatabaseLoaded = true;
-
-                // Set up auto-save every 30 seconds
-                _ = Task.Run(AutoSaveLoop);
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Database initialization failed: {ex.Message}");
+
+                // Clean up failed connection
+                try
+                {
+                    await _database?.CloseAsync();
+                }
+                catch { }
+                _database = null;
+
                 throw new InvalidOperationException($"Failed to initialize database: {ex.Message}", ex);
             }
         }
 
-        private async Task LoadEncryptedDatabase()
+        private async Task<string> GetOrCreateDatabaseKeyAsync()
         {
             try
             {
-                var encryptedData = await File.ReadAllBytesAsync(_encryptedDatabasePath);
-                var decryptedData = DecryptData(encryptedData, _encryptionKey);
-                await File.WriteAllBytesAsync(_workingDatabasePath, decryptedData);
+                // Check if key file exists and is valid
+                if (File.Exists(_keyFilePath))
+                {
+                    System.Diagnostics.Debug.WriteLine("Key file exists, reading...");
 
-                // Verify it's a valid database
-                using var testConnection = new SQLiteConnection(_workingDatabasePath);
-                testConnection.Execute("SELECT COUNT(*) FROM sqlite_master");
+                    var keyContent = await File.ReadAllTextAsync(_keyFilePath);
+
+                    // Validate the key (64 characters, alphanumeric)
+                    if (!string.IsNullOrEmpty(keyContent) &&
+                        keyContent.Length == 64 &&
+                        keyContent.All(c => char.IsLetterOrDigit(c)))
+                    {
+                        System.Diagnostics.Debug.WriteLine("Valid key found");
+                        return keyContent;
+                    }
+                    else
+                    {
+                        System.Diagnostics.Debug.WriteLine("Invalid key found, regenerating...");
+                    }
+                }
+
+                // Generate and save new key
+                System.Diagnostics.Debug.WriteLine("Creating new database key...");
+                var newKey = GenerateSecureKey();
+                await SaveKeyAsync(newKey);
+                return newKey;
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException("Invalid password or corrupted database", ex);
+                System.Diagnostics.Debug.WriteLine($"Key management error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to manage database key: {ex.Message}", ex);
             }
         }
 
-        private async Task CreateNewDatabase()
+        private string GenerateSecureKey()
         {
-            // Create empty database file
-            using var connection = new SQLiteConnection(_workingDatabasePath);
-            connection.Close();
-        }
+            // Generate a safe alphanumeric key
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            using var rng = RandomNumberGenerator.Create();
+            var keyLength = 64;
+            var result = new char[keyLength];
 
-        private async Task AutoSaveLoop()
-        {
-            while (_isDatabaseLoaded)
+            for (int i = 0; i < keyLength; i++)
             {
-                try
-                {
-                    await Task.Delay(30000); // Save every 30 seconds
-                    if (_isDatabaseLoaded)
-                    {
-                        await SaveEncryptedDatabase();
-                    }
-                }
-                catch
-                {
-                    // Continue the loop even if save fails
-                }
+                var randomBytes = new byte[1];
+                rng.GetBytes(randomBytes);
+                result[i] = chars[randomBytes[0] % chars.Length];
             }
+
+            return new string(result);
         }
 
-        public async Task SaveEncryptedDatabase()
+        private async Task SaveKeyAsync(string key)
         {
-            if (!_isDatabaseLoaded) return;
-
             try
             {
-                // Close database connection temporarily
-                await _database?.CloseAsync();
+                System.Diagnostics.Debug.WriteLine($"Saving key to: {_keyFilePath}");
 
-                // Encrypt and save
-                var unencryptedData = await File.ReadAllBytesAsync(_workingDatabasePath);
-                var encryptedData = EncryptData(unencryptedData, _encryptionKey);
-
-                // Atomic save with backup
-                var backupPath = _encryptedDatabasePath + ".backup";
-                if (File.Exists(_encryptedDatabasePath))
+                var directory = Path.GetDirectoryName(_keyFilePath);
+                if (!Directory.Exists(directory))
                 {
-                    File.Copy(_encryptedDatabasePath, backupPath, true);
+                    Directory.CreateDirectory(directory);
                 }
 
-                try
-                {
-                    await File.WriteAllBytesAsync(_encryptedDatabasePath, encryptedData);
-                    if (File.Exists(backupPath))
-                    {
-                        File.Delete(backupPath);
-                    }
-                }
-                catch
-                {
-                    // Restore backup on failure
-                    if (File.Exists(backupPath))
-                    {
-                        File.Copy(backupPath, _encryptedDatabasePath, true);
-                        File.Delete(backupPath);
-                    }
-                    throw;
-                }
+                // Save as plain text (no encryption, no special attributes)
+                await File.WriteAllTextAsync(_keyFilePath, key);
 
-                // Reconnect to database
-                _database = new SQLiteAsyncConnection(_workingDatabasePath);
+                System.Diagnostics.Debug.WriteLine("Key saved successfully");
+                System.Diagnostics.Debug.WriteLine($"File exists: {File.Exists(_keyFilePath)}");
+
+                // Verify the saved content
+                var savedContent = await File.ReadAllTextAsync(_keyFilePath);
+                System.Diagnostics.Debug.WriteLine($"Verified content: {savedContent}");
             }
             catch (Exception ex)
             {
-                throw new InvalidOperationException($"Failed to save database: {ex.Message}", ex);
-            }
-        }
-
-        public async Task CloseAndCleanup()
-        {
-            if (!_isDatabaseLoaded) return;
-
-            try
-            {
-                _isDatabaseLoaded = false;
-
-                // Final save
-                await SaveEncryptedDatabase();
-
-                // Close database
-                await _database?.CloseAsync();
-
-                // Delete working file
-                if (File.Exists(_workingDatabasePath))
-                {
-                    File.Delete(_workingDatabasePath);
-                }
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"Cleanup error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Failed to save key: {ex.Message}");
+                throw new InvalidOperationException($"Failed to save key: {ex.Message}", ex);
             }
         }
 
         public async Task SetEncryptionForUser(string username, string password)
         {
-            _encryptionKey = GenerateEncryptionKey(username, password);
-        }
-
-        private string GenerateEncryptionKey(string username, string password)
-        {
-            using var pbkdf2 = new Rfc2898DeriveBytes(
-                password,
-                Encoding.UTF8.GetBytes(username + "SEF_SALT_2024"),
-                100000, // Higher iteration count for security
-                HashAlgorithmName.SHA256
-            );
-
-            var key = pbkdf2.GetBytes(32);
-            return Convert.ToBase64String(key);
-        }
-
-        private byte[] EncryptData(byte[] data, string key)
-        {
-            using var aes = Aes.Create();
-            aes.KeySize = 256;
-            aes.BlockSize = 128;
-            aes.Mode = CipherMode.CBC; // Use GCM for authenticated encryption
-
-            var keyBytes = Convert.FromBase64String(key);
-            aes.Key = keyBytes;
-
-            var nonce = new byte[12]; // GCM nonce
-            RandomNumberGenerator.Fill(nonce);
-
-            var tag = new byte[16]; // GCM authentication tag
-            var encrypted = new byte[data.Length];
-
-            using var encryptor = aes.CreateEncryptor();
-            // For GCM mode, we need to use a different approach
-            // This is a simplified version - in production use AesGcm class
-            aes.GenerateIV();
-            using var transform = aes.CreateEncryptor();
-            var encryptedData = transform.TransformFinalBlock(data, 0, data.Length);
-
-            var result = new byte[aes.IV.Length + encryptedData.Length];
-            Array.Copy(aes.IV, 0, result, 0, aes.IV.Length);
-            Array.Copy(encryptedData, 0, result, aes.IV.Length, encryptedData.Length);
-
-            return result;
-        }
-
-        private byte[] DecryptData(byte[] encryptedData, string key)
-        {
-            using var aes = Aes.Create();
-            aes.KeySize = 256;
-            aes.BlockSize = 128;
-            aes.Mode = CipherMode.CBC; // Match encryption mode
-            aes.Padding = PaddingMode.PKCS7;
-
-            var keyBytes = Convert.FromBase64String(key);
-            aes.Key = keyBytes;
-
-            var iv = new byte[16];
-            Array.Copy(encryptedData, 0, iv, 0, 16);
-            aes.IV = iv;
-
-            var encrypted = new byte[encryptedData.Length - 16];
-            Array.Copy(encryptedData, 16, encrypted, 0, encrypted.Length);
-
-            using var decryptor = aes.CreateDecryptor();
-            return decryptor.TransformFinalBlock(encrypted, 0, encrypted.Length);
+            await Task.CompletedTask;
         }
 
         public async Task InitializeDatabaseAsync()
@@ -253,11 +158,26 @@ namespace SEFApp.Services
             try
             {
                 await CreateTablesAsync();
+
+                var masterTableCount = await _database.ExecuteScalarAsync<int>("SELECT count(*) FROM sqlite_master");
+                System.Diagnostics.Debug.WriteLine($"Database connection verified. Master tables: {masterTableCount}");
+
                 await InitializeDefaultDataAsync();
                 _isInitialized = true;
+
+                System.Diagnostics.Debug.WriteLine("Database initialized successfully");
+            }
+            catch (SQLiteException sqlEx) when (sqlEx.Message.Contains("file is not a database") ||
+                                                sqlEx.Message.Contains("file is encrypted") ||
+                                                sqlEx.Message.Contains("file is not encrypted") ||
+                                                sqlEx.Message.Contains("wrong password"))
+            {
+                System.Diagnostics.Debug.WriteLine($"SQLite password/encryption error: {sqlEx.Message}");
+                throw new InvalidOperationException("Invalid database key or corrupted database", sqlEx);
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"Database initialization error: {ex.Message}");
                 throw new InvalidOperationException($"Database initialization failed: {ex.Message}", ex);
             }
         }
@@ -273,6 +193,8 @@ namespace SEFApp.Services
             await _database.CreateTableAsync<FiscalDevice>();
             await _database.CreateTableAsync<Company>();
             await _database.CreateTableAsync<TransactionLog>();
+
+            System.Diagnostics.Debug.WriteLine("All tables created successfully");
         }
 
         private async Task InitializeDefaultDataAsync()
@@ -354,7 +276,34 @@ namespace SEFApp.Services
             }
         }
 
-        // User Management - Same as before
+        // Debug methods
+        public string GetKeyFilePathForDebugging()
+        {
+            return _keyFilePath;
+        }
+
+        public bool KeyFileExistsForDebugging()
+        {
+            return File.Exists(_keyFilePath);
+        }
+
+        public async Task<string> GetKeyContentForDebugging()
+        {
+            try
+            {
+                if (File.Exists(_keyFilePath))
+                {
+                    return await File.ReadAllTextAsync(_keyFilePath);
+                }
+                return "Key file does not exist";
+            }
+            catch (Exception ex)
+            {
+                return $"Error reading key: {ex.Message}";
+            }
+        }
+
+        // User Management
         public async Task<bool> CreateUserAsync(User user, string password)
         {
             try
@@ -684,7 +633,7 @@ namespace SEFApp.Services
 
         public async Task<bool> IsDatabaseInitializedAsync()
         {
-            return _isInitialized && _database != null && _isDatabaseLoaded;
+            return _isInitialized && _database != null;
         }
 
         // Helper methods
@@ -716,11 +665,6 @@ namespace SEFApp.Services
             return await _database.Table<Product>()
                 .Where(p => p.IsActive)
                 .CountAsync();
-        }
-
-        public async Task CleanupUnencryptedFiles()
-        {
-            await Task.CompletedTask;
         }
 
         // Stub implementations for remaining interface methods

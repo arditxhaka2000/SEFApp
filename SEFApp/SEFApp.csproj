@@ -63,41 +63,40 @@
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.6" />
 
-		<!-- Use the correct SQLCipher packages -->
+		<!-- SQLCipher - SIMPLEST APPROACH -->
 		<PackageReference Include="sqlite-net-sqlcipher" Version="1.9.172" />
-		<PackageReference Include="SQLitePCLRaw.bundle_sqlcipher" Version="1.1.14" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Folder Include="Models\Application\" />
-	  <Folder Include="Models\Fiscal\" />
-	  <Folder Include="Models\Certification\" />
-	  <Folder Include="Models\Documents\" />
-	  <Folder Include="Data\" />
-	  <Folder Include="Behaviors\" />
-	  <Folder Include="Controls\" />
-	  <Folder Include="Utilities\" />
+		<Folder Include="Models\Application\" />
+		<Folder Include="Models\Fiscal\" />
+		<Folder Include="Models\Certification\" />
+		<Folder Include="Models\Documents\" />
+		<Folder Include="Data\" />
+		<Folder Include="Behaviors\" />
+		<Folder Include="Controls\" />
+		<Folder Include="Utilities\" />
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Compile Update="Views\DashboardPage.xaml.cs">
-	    <DependentUpon>DashboardPage.xaml</DependentUpon>
-	  </Compile>
-	  <Compile Update="Views\SettingsView.xaml.cs">
-	    <DependentUpon>SettingsView.xaml</DependentUpon>
-	  </Compile>
+		<Compile Update="Views\DashboardPage.xaml.cs">
+			<DependentUpon>DashboardPage.xaml</DependentUpon>
+		</Compile>
+		<Compile Update="Views\SettingsView.xaml.cs">
+			<DependentUpon>SettingsView.xaml</DependentUpon>
+		</Compile>
 	</ItemGroup>
 
 	<ItemGroup>
-	  <MauiXaml Update="Views\DashboardPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\LoginPage.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
-	  <MauiXaml Update="Views\SettingsView.xaml">
-	    <Generator>MSBuild:Compile</Generator>
-	  </MauiXaml>
+		<MauiXaml Update="Views\DashboardPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\LoginPage.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\SettingsView.xaml">
+			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 	</ItemGroup>
 
 </Project>

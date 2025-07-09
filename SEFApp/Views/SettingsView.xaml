@@ -194,7 +194,6 @@
                                     TextColor="{DynamicResource PrimaryTextColor}">
 								<Picker.Items>
 									<x:String>User</x:String>
-									<x:String>Admin</x:String>
 								</Picker.Items>
 							</Picker>
 						</StackLayout>
