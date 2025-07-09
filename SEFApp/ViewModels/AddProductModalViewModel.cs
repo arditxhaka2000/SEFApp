@@ -83,6 +83,29 @@ namespace SEFApp.ViewModels
             }
         }
 
+        private string _newCategory = string.Empty;
+        public string NewCategory
+        {
+            get => _newCategory;
+            set
+            {
+                if (SetProperty(ref _newCategory, value))
+                {
+                    if (!string.IsNullOrWhiteSpace(value))
+                    {
+                        Category = value.Trim();
+                    }
+                }
+            }
+        }
+
+        private bool _isAddingNewCategory;
+        public bool IsAddingNewCategory
+        {
+            get => _isAddingNewCategory;
+            set => SetProperty(ref _isAddingNewCategory, value);
+        }
+
         private string _unit = "pcs";
         public string Unit
         {
@@ -104,7 +127,7 @@ namespace SEFApp.ViewModels
             }
         }
 
-        private string _taxRateDisplay = "20% (Standard)";
+        private string _taxRateDisplay = "18% (Standard)";
         public string TaxRateDisplay
         {
             get => _taxRateDisplay;
@@ -207,7 +230,7 @@ namespace SEFApp.ViewModels
         // Options
         public ObservableCollection<string> UnitOptions { get; set; }
         public ObservableCollection<string> TaxRateOptions { get; set; }
-        public ObservableCollection<string> CategoryOptions { get; set; }
+        public ObservableCollection<string> ExistingCategories { get; set; }
 
         #endregion
 
@@ -215,6 +238,8 @@ namespace SEFApp.ViewModels
 
         public ICommand SaveCommand { get; private set; }
         public ICommand CancelCommand { get; private set; }
+        public ICommand AddNewCategoryCommand { get; private set; }
+        public ICommand SelectCategoryCommand { get; private set; }
 
         #endregion
 
@@ -224,11 +249,18 @@ namespace SEFApp.ViewModels
         {
             SaveCommand = new Command(async () => await SaveProduct(), () => IsFormValid && !IsLoading);
             CancelCommand = new Command(async () => await Cancel());
+            AddNewCategoryCommand = new Command(() => {
+                IsAddingNewCategory = true;
+                NewCategory = string.Empty;
+            });
+            SelectCategoryCommand = new Command<string>((category) => {
+                Category = category;
+                IsAddingNewCategory = false;
+            });
         }
 
         private async void InitializeData()
         {
-
             // Initialize unit options
             UnitOptions = new ObservableCollection<string>
             {
@@ -238,40 +270,30 @@ namespace SEFApp.ViewModels
             // Initialize tax rate options (Kosovo tax rates)
             TaxRateOptions = new ObservableCollection<string>
             {
-                "0% (Exempt)", "8% (Reduced)", "18% (Standard)", "20% (Standard)"
+                "0%", "8%", "18%"
             };
 
-            // Initialize common category options
-            CategoryOptions = new ObservableCollection<string>
-            {
-                "Electronics", "Clothing", "Food & Beverages", "Books", "Home & Garden",
-                "Sports & Outdoors", "Health & Beauty", "Toys & Games", "Automotive",
-                "Office Supplies", "Tools & Hardware", "Music & Movies", "Other"
-            };
+            // Initialize existing categories
+            ExistingCategories = new ObservableCollection<string>();
+            await LoadExistingCategories();
 
-            // Load existing categories from database
+            
+        }
+
+        private async Task LoadExistingCategories()
+        {
             try
             {
-                var existingCategories = await _databaseService.GetProductCategoriesAsync();
-                foreach (var category in existingCategories)
+                var categories = await _databaseService.GetProductCategoriesAsync();
+                ExistingCategories.Clear();
+                foreach (var category in categories)
                 {
-                    if (!CategoryOptions.Contains(category))
-                    {
-                        CategoryOptions.Add(category);
-                    }
+                    ExistingCategories.Add(category);
                 }
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to load categories: {ex.Message}");
-            }
-
-            // Set default values
-            Unit = "pcs";
-            TaxRateDisplay = "20% (Standard)";
-            if (CategoryOptions.Count > 0)
-            {
-                Category = CategoryOptions[0];
             }
         }
 
@@ -299,12 +321,14 @@ namespace SEFApp.ViewModels
             // Set tax rate display based on product tax rate
             TaxRateDisplay = product.TaxRate switch
             {
-                0 => "0% (Exempt)",
-                0.08m => "8% (Reduced)",
-                0.18m => "18% (Standard)",
-                0.20m => "20% (Standard)",
-                _ => "20% (Standard)"
+                0 => "0%",
+                0.08m => "8%",
+                0.18m => "18%",
+                _ => "18%"
             };
+
+            // Validate the form after loading
+            ValidateForm();
         }
 
         private async Task SaveProduct()
@@ -313,7 +337,7 @@ namespace SEFApp.ViewModels
             {
                 IsLoading = true;
 
-                if (!ValidateForm())
+                if (!await ValidateFormAsync())
                 {
                     await _alertService.ShowErrorAsync("Please correct the validation errors before saving.");
                     return;
@@ -418,7 +442,7 @@ namespace SEFApp.ViewModels
 
         #region Validation
 
-        private void ValidateProductCode()
+        private async void ValidateProductCode()
         {
             ProductCodeError = string.Empty;
 
@@ -440,9 +464,28 @@ namespace SEFApp.ViewModels
                 ProductCodeError = "Product code cannot contain spaces, commas, or semicolons";
                 return;
             }
+
+            // Check for duplicate product code (only during editing or when not the same product)
+            try
+            {
+                var existingProduct = await _databaseService.GetProductByCodeAsync(ProductCode.Trim());
+                if (existingProduct != null)
+                {
+                    // If editing, check if it's not the same product
+                    if (!IsEditing || existingProduct.Id != _originalProduct.Id)
+                    {
+                        ProductCodeError = "Product code already exists";
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error checking product code: {ex.Message}");
+            }
         }
 
-        private void ValidateProductName()
+        private async void ValidateProductName()
         {
             ProductNameError = string.Empty;
 
@@ -462,6 +505,28 @@ namespace SEFApp.ViewModels
             {
                 ProductNameError = "Product name must be less than 100 characters";
                 return;
+            }
+
+            // Check for duplicate product name (only during editing or when not the same product)
+            try
+            {
+                var allProducts = await _databaseService.GetAllProductsAsync();
+                var existingProduct = allProducts.FirstOrDefault(p =>
+                    p.Name.Equals(ProductName.Trim(), StringComparison.OrdinalIgnoreCase));
+
+                if (existingProduct != null)
+                {
+                    // If editing, check if it's not the same product
+                    if (!IsEditing || existingProduct.Id != _originalProduct.Id)
+                    {
+                        ProductNameError = "Product name already exists";
+                        return;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error checking product name: {ex.Message}");
             }
         }
 
@@ -511,12 +576,18 @@ namespace SEFApp.ViewModels
             }
         }
 
-        private bool ValidateForm()
+        private async Task<bool> ValidateFormAsync()
         {
-            ValidateProductCode();
-            ValidateProductName();
+            // Run async validations
+            await Task.Run(() => ValidateProductCode());
+            await Task.Run(() => ValidateProductName());
+
+            // Run sync validations
             ValidateCategory();
             ValidatePrice();
+
+            // Wait a bit for async validations to complete
+            await Task.Delay(100);
 
             bool isValid = !HasProductCodeError &&
                           !HasProductNameError &&
@@ -529,15 +600,26 @@ namespace SEFApp.ViewModels
             return isValid;
         }
 
+        private void ValidateForm()
+        {
+            // For immediate UI feedback, run sync validation
+            bool isValid = !HasProductCodeError &&
+                          !HasProductNameError &&
+                          !HasCategoryError &&
+                          !HasPriceError;
+
+            IsFormValid = isValid;
+            ((Command)SaveCommand).ChangeCanExecute();
+        }
+
         private decimal GetTaxRateFromDisplay(string taxRateDisplay)
         {
             return taxRateDisplay switch
             {
-                "0% (Exempt)" => 0.0m,
-                "8% (Reduced)" => 0.08m,
-                "18% (Standard)" => 0.18m,
-                "20% (Standard)" => 0.20m,
-                _ => 0.20m
+                "0%" => 0.0m,
+                "8%" => 0.08m,
+                "18%" => 0.18m,
+                _ => 0.18m
             };
         }
 

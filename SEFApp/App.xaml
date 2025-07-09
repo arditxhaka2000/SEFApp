@@ -14,9 +14,10 @@
             <converters:StockStatusTextConverter x:Key="StockStatusTextConverter" />
             <converters:DecimalToStringConverter x:Key="DecimalToStringConverter" />
             <converters:EmptyStringToVisibilityConverter x:Key="EmptyStringToVisibilityConverter" />
-            <converters:InvertedBoolConverter x:Key="InvertedBoolConverter" />
-            <converters:TransactionStatusIconConverter x:Key="TransactionStatusIconConverter" />
-
+            <converters:InverseBoolConverter x:Key="InverseBoolConverter" />
+            <converters:CountToBoolConverter x:Key="CountToBoolConverter" />
+            <converters:StringToBoolConverter x:Key="StringToBoolConverter" />
+            <converters:CategoryBackgroundConverter x:Key="CategoryBackgroundConverter" />
             <!-- Colors -->
             <Color x:Key="PrimaryColor">#1a73e8</Color>
             <Color x:Key="SecondaryColor">#34a853</Color>
@@ -132,7 +133,10 @@
                 <Setter Property="TextColor" Value="{StaticResource SuccessColor}" />
                 <Setter Property="FontAttributes" Value="Italic" />
             </Style>
-
+            
+            
+           
+            
         </ResourceDictionary>
     </Application.Resources>
 </Application>

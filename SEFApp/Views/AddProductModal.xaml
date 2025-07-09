@@ -5,199 +5,253 @@
              Title="Add Product"
              BackgroundColor="{DynamicResource PageBackgroundColor}">
 
-    <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Cancel"
+	<ContentPage.ToolbarItems>
+		<ToolbarItem Text="Cancel"
                      Command="{Binding CancelCommand}"
                      Priority="0" />
-        <ToolbarItem Text="Save"
+		<ToolbarItem Text="Save"
                      Command="{Binding SaveCommand}"
                      Priority="1" />
-    </ContentPage.ToolbarItems>
+	</ContentPage.ToolbarItems>
 
-    <ScrollView>
-        <StackLayout Padding="20" Spacing="20">
+	<ScrollView>
+		<StackLayout Padding="20" Spacing="20">
 
-            <!-- Header -->
-            <Frame BackgroundColor="{DynamicResource PrimaryColor}"
+			<!-- Header -->
+            
+			<Frame BackgroundColor="{DynamicResource PrimaryColor}"
                    CornerRadius="10"
                    Padding="20"
                    HasShadow="True">
-                <StackLayout Orientation="Horizontal" Spacing="15">
-                    <Label Text="📦"
+				<StackLayout Orientation="Horizontal" Spacing="15">
+					<Label Text="📦"
                            FontSize="24"
                            VerticalOptions="Center"/>
-                    <StackLayout>
-                        <Label Text="{Binding IsEditing, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Edit Product|Add New Product'}"
+					<StackLayout>
+						<Label Text="{Binding IsEditing, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Edit Product|Add New Product'}"
                                FontSize="20"
                                FontAttributes="Bold"
                                TextColor="White"/>
-                        <Label Text="{Binding IsEditing, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update product information|Create a new product'}"
+						<Label Text="{Binding IsEditing, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update product information|Create a new product'}"
                                FontSize="14"
                                TextColor="White"
                                Opacity="0.8"/>
-                    </StackLayout>
-                </StackLayout>
-            </Frame>
+					</StackLayout>
+				</StackLayout>
+			</Frame>
 
-            <!-- Product Information -->
-            <Frame BackgroundColor="{DynamicResource SurfaceColor}"
+			<!-- Product Information -->
+			<Frame BackgroundColor="{DynamicResource SurfaceColor}"
                    CornerRadius="10"
                    Padding="20"
                    HasShadow="True">
-                <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
+				<Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto"
                       ColumnDefinitions="*,*"
                       RowSpacing="20"
                       ColumnSpacing="15">
 
-                    <!-- Product Code -->
-                    <StackLayout Grid.Row="0" Grid.Column="0" Spacing="5">
-                        <Label Text="Product Code *"
+					<!-- Product Code -->
+					<StackLayout Grid.Row="0" Grid.Column="0" Spacing="5">
+						<Label Text="Product Code *"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Entry Text="{Binding ProductCode}"
+						<Entry Text="{Binding ProductCode}"
                                Placeholder="Enter product code"
                                BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                Style="{StaticResource StandardEntry}"/>
-                        <Label Text="{Binding ProductCodeError}"
+						<Label Text="{Binding ProductCodeError}"
                                TextColor="{DynamicResource ErrorColor}"
                                FontSize="12"
                                IsVisible="{Binding HasProductCodeError}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Product Name -->
-                    <StackLayout Grid.Row="0" Grid.Column="1" Spacing="5">
-                        <Label Text="Product Name *"
+					<!-- Product Name -->
+					<StackLayout Grid.Row="0" Grid.Column="1" Spacing="5">
+						<Label Text="Product Name *"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Entry Text="{Binding ProductName}"
+						<Entry Text="{Binding ProductName}"
                                Placeholder="Enter product name"
                                BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                Style="{StaticResource StandardEntry}"/>
-                        <Label Text="{Binding ProductNameError}"
+						<Label Text="{Binding ProductNameError}"
                                TextColor="{DynamicResource ErrorColor}"
                                FontSize="12"
                                IsVisible="{Binding HasProductNameError}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Category -->
-                    <StackLayout Grid.Row="1" Grid.Column="0" Spacing="5">
-                        <Label Text="Category *"
+					<!-- Category -->
+					<StackLayout Grid.Row="1" Grid.Column="0" Spacing="5">
+						<Label Text="Category *"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Picker Title="Select Category"
-                                ItemsSource="{Binding CategoryOptions}"
-                                SelectedItem="{Binding Category}"
-                                BackgroundColor="{DynamicResource EntryBackgroundColor}"
-                                TextColor="{DynamicResource PrimaryTextColor}"/>
-                        <Label Text="{Binding CategoryError}"
+
+						<!-- Existing Categories Section -->
+						<StackLayout IsVisible="{Binding IsAddingNewCategory, Converter={StaticResource InverseBoolConverter}}">
+							<!-- Show existing categories if any -->
+							<ScrollView HeightRequest="100"
+                                        IsVisible="{Binding ExistingCategories.Count, Converter={StaticResource CountToBoolConverter}}"
+                                        BackgroundColor="{DynamicResource EntryBackgroundColor}">
+								<StackLayout>
+									<CollectionView ItemsSource="{Binding ExistingCategories}"
+                                                    SelectionMode="None">
+										<CollectionView.ItemTemplate>
+											<DataTemplate>
+												<Grid Padding="10,5">
+													<Grid.GestureRecognizers>
+														<TapGestureRecognizer Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.SelectCategoryCommand}"
+                                                                              CommandParameter="{Binding .}"/>
+													</Grid.GestureRecognizers>
+													<Label Text="{Binding .}"
+                                                           TextColor="{DynamicResource PrimaryTextColor}"
+                                                           FontSize="14"/>
+												</Grid>
+											</DataTemplate>
+										</CollectionView.ItemTemplate>
+									</CollectionView>
+								</StackLayout>
+							</ScrollView>
+
+							<Button Text="+ Add New Category"
+                                    Command="{Binding AddNewCategoryCommand}"
+                                    BackgroundColor="{DynamicResource SecondaryColor}"
+                                    TextColor="White"
+                                    FontSize="12"
+                                    CornerRadius="5"
+                                    Padding="10,5"
+                                    HorizontalOptions="Start"/>
+						</StackLayout>
+
+						<!-- New Category Input -->
+						<StackLayout IsVisible="{Binding IsAddingNewCategory}" Orientation="Horizontal" Spacing="10">
+							<Entry Text="{Binding NewCategory}"
+                                   Placeholder="Enter new category"
+                                   BackgroundColor="{DynamicResource EntryBackgroundColor}"
+                                   HorizontalOptions="FillAndExpand"/>
+							<Button Text="✓"
+                                    Command="{Binding SelectCategoryCommand}"
+                                    CommandParameter="{Binding NewCategory}"
+                                    BackgroundColor="{DynamicResource SuccessColor}"
+                                    TextColor="White"
+                                    WidthRequest="40"
+                                    CornerRadius="5"/>
+						</StackLayout>
+
+						<!-- Selected Category Display -->
+						<Label Text="{Binding Category, StringFormat='Selected: {0}'}"
+                               FontSize="12"
+                               TextColor="{DynamicResource InfoColor}"
+                               IsVisible="{Binding Category, Converter={StaticResource StringToBoolConverter}}"/>
+
+						<Label Text="{Binding CategoryError}"
                                TextColor="{DynamicResource ErrorColor}"
                                FontSize="12"
                                IsVisible="{Binding HasCategoryError}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Unit -->
-                    <StackLayout Grid.Row="1" Grid.Column="1" Spacing="5">
-                        <Label Text="Unit of Measure"
+					<!-- Unit -->
+					<StackLayout Grid.Row="1" Grid.Column="1" Spacing="5">
+						<Label Text="Unit of Measure"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Picker Title="Select Unit"
+						<Picker Title="Select Unit"
                                 ItemsSource="{Binding UnitOptions}"
                                 SelectedItem="{Binding Unit}"
                                 BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                 TextColor="{DynamicResource PrimaryTextColor}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Price -->
-                    <StackLayout Grid.Row="2" Grid.Column="0" Spacing="5">
-                        <Label Text="Price (€) *"
+					<!-- Price -->
+					<StackLayout Grid.Row="2" Grid.Column="0" Spacing="5">
+						<Label Text="Price (€) *"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Entry Text="{Binding Price}"
+						<Entry Text="{Binding Price}"
                                Placeholder="0.00"
                                Keyboard="Numeric"
                                BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                TextColor="{DynamicResource PrimaryTextColor}"/>
-                        <Label Text="{Binding PriceError}"
+						<Label Text="{Binding PriceError}"
                                TextColor="{DynamicResource ErrorColor}"
                                FontSize="12"
                                IsVisible="{Binding HasPriceError}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Tax Rate -->
-                    <StackLayout Grid.Row="2" Grid.Column="1" Spacing="5">
-                        <Label Text="Tax Rate (%)"
+					<!-- Tax Rate -->
+					<StackLayout Grid.Row="2" Grid.Column="1" Spacing="5">
+						<Label Text="Tax Rate (%)"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Picker Title="Select Tax Rate"
+						<Picker Title="Select Tax Rate"
                                 ItemsSource="{Binding TaxRateOptions}"
                                 SelectedItem="{Binding TaxRateDisplay}"
                                 BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                 TextColor="{DynamicResource PrimaryTextColor}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Current Stock -->
-                    <StackLayout Grid.Row="3" Grid.Column="0" Spacing="5">
-                        <Label Text="Current Stock"
+					<!-- Current Stock -->
+					<StackLayout Grid.Row="3" Grid.Column="0" Spacing="5">
+						<Label Text="Current Stock"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Entry Text="{Binding Stock}"
+						<Entry Text="{Binding Stock}"
                                Placeholder="0"
                                Keyboard="Numeric"
                                BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                TextColor="{DynamicResource PrimaryTextColor}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Minimum Stock -->
-                    <StackLayout Grid.Row="3" Grid.Column="1" Spacing="5">
-                        <Label Text="Minimum Stock"
+					<!-- Minimum Stock -->
+					<StackLayout Grid.Row="3" Grid.Column="1" Spacing="5">
+						<Label Text="Minimum Stock"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Entry Text="{Binding MinStock}"
+						<Entry Text="{Binding MinStock}"
                                Placeholder="0"
                                Keyboard="Numeric"
                                BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                TextColor="{DynamicResource PrimaryTextColor}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Description -->
-                    <StackLayout Grid.Row="4" Grid.ColumnSpan="2" Spacing="5">
-                        <Label Text="Description"
+					<!-- Description -->
+					<StackLayout Grid.Row="4" Grid.ColumnSpan="2" Spacing="5">
+						<Label Text="Description"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Editor Text="{Binding Description}"
+						<Editor Text="{Binding Description}"
                                 Placeholder="Enter product description"
                                 HeightRequest="100"
                                 BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                 TextColor="{DynamicResource PrimaryTextColor}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Active Status -->
-                    <StackLayout Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="10">
-                        <Label Text="Active Product"
+					<!-- Active Status -->
+					<StackLayout Grid.Row="5" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="10">
+						<Label Text="Active Product"
                                FontSize="14"
                                FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"
                                VerticalOptions="Center"/>
-                        <Switch IsToggled="{Binding IsActive}"
+						<Switch IsToggled="{Binding IsActive}"
                                 OnColor="{DynamicResource PrimaryColor}"/>
-                        <Label Text="{Binding IsActive, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Active|Inactive'}"
+						<Label Text="{Binding IsActive, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Active|Inactive'}"
                                FontSize="12"
                                TextColor="{DynamicResource SecondaryTextColor}"
                                VerticalOptions="Center"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Action Buttons -->
-                    <StackLayout Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="10">
-                        <Button Text="Cancel"
+					<!-- Action Buttons -->
+					<StackLayout Grid.Row="6" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="10">
+						<Button Text="Cancel"
                                 Command="{Binding CancelCommand}"
                                 BackgroundColor="{DynamicResource SecondaryColor}"
                                 TextColor="White"
@@ -206,7 +260,7 @@
                                 Padding="20,10"
                                 HorizontalOptions="FillAndExpand"/>
 
-                        <Button Text="{Binding IsEditing, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update Product|Add Product'}"
+						<Button Text="{Binding IsEditing, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Update Product|Add Product'}"
                                 Command="{Binding SaveCommand}"
                                 BackgroundColor="{DynamicResource PrimaryColor}"
                                 TextColor="White"
@@ -215,17 +269,17 @@
                                 Padding="20,10"
                                 HorizontalOptions="FillAndExpand"
                                 IsEnabled="{Binding IsFormValid}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                </Grid>
-            </Frame>
+				</Grid>
+			</Frame>
 
-            <!-- Loading Indicator -->
-            <ActivityIndicator IsVisible="{Binding IsLoading}"
+			<!-- Loading Indicator -->
+			<ActivityIndicator IsVisible="{Binding IsLoading}"
                                IsRunning="{Binding IsLoading}"
                                Color="{DynamicResource PrimaryColor}"
                                HeightRequest="50"/>
 
-        </StackLayout>
-    </ScrollView>
+		</StackLayout>
+	</ScrollView>
 </ContentPage>

@@ -137,9 +137,23 @@ namespace SEFApp.ViewModels
         {
             if (product == null) return;
 
-            var editProductPage = new Views.AddProductModal(_databaseService,_alertService);
-            editProductPage.ProductSaved += OnProductSaved;
-            await Shell.Current.Navigation.PushModalAsync(editProductPage);
+            try
+            {
+                var editProductPage = new Views.AddProductModal(_databaseService, _alertService);
+                editProductPage.ProductSaved += OnProductSaved;
+
+                // Load the product data BEFORE showing the modal
+                if (editProductPage.BindingContext is AddProductModalViewModel viewModel)
+                {
+                    viewModel.LoadProduct(product);
+                }
+
+                await Shell.Current.Navigation.PushModalAsync(editProductPage);
+            }
+            catch (Exception ex)
+            {
+                await _alertService.ShowErrorAsync($"Error opening edit modal: {ex.Message}");
+            }
         }
 
         private async Task DeleteProduct(Product product)

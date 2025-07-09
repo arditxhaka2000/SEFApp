@@ -34,7 +34,7 @@
                            PlaceholderColor="{DynamicResource SecondaryTextColor}"
                            SearchCommand="{Binding SearchCommand}"/>
                 <Button Grid.Column="1"
-                        Text="🔍"
+                        Text="Search"
                         BackgroundColor="Transparent"
                         TextColor="{DynamicResource PrimaryColor}"
                         Command="{Binding SearchCommand}"
@@ -122,7 +122,7 @@
                                              Orientation="Horizontal" 
                                              Spacing="5"
                                              VerticalOptions="Center">
-                                    <Button Text="✏️"
+                                    <Button Text="✏"
                                             BackgroundColor="{DynamicResource InfoColor}"
                                             TextColor="White"
                                             FontSize="14"
