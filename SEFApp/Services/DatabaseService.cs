@@ -666,7 +666,315 @@ namespace SEFApp.Services
                 .Where(p => p.IsActive)
                 .CountAsync();
         }
+        // Add these methods to your DatabaseService.cs file
 
+        #region Product Management Methods
+
+        public async Task<Product> CreateProductAsync(Product product)
+        {
+            try
+            {
+                // Validate product data
+                if (string.IsNullOrWhiteSpace(product.ProductCode))
+                    throw new ArgumentException("Product code is required");
+
+                if (string.IsNullOrWhiteSpace(product.Name))
+                    throw new ArgumentException("Product name is required");
+
+                // Check if product code already exists
+                var existingProduct = await GetProductByCodeAsync(product.ProductCode);
+                if (existingProduct != null)
+                    throw new InvalidOperationException("Product code already exists");
+
+                // Set creation date
+                product.CreatedDate = DateTime.Now;
+                product.IsActive = true;
+
+                // Insert product
+                var result = await _database.InsertAsync(product);
+                if (result > 0)
+                {
+                    // Get the inserted product (with ID)
+                    var insertedProduct = await GetProductByCodeAsync(product.ProductCode);
+
+                    // Log the creation
+                    await LogActionAsync("Products", "CREATE", insertedProduct.Id.ToString(),
+                        null, insertedProduct, GetCurrentUserId());
+
+                    return insertedProduct;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateProductAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to create product: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<Product> GetProductByIdAsync(int id)
+        {
+            try
+            {
+                return await _database.Table<Product>()
+                    .Where(p => p.Id == id)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetProductByIdAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get product by ID: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<Product> GetProductByCodeAsync(string code)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(code))
+                    return null;
+
+                return await _database.Table<Product>()
+                    .Where(p => p.ProductCode == code)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetProductByCodeAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get product by code: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<Product>> GetAllProductsAsync()
+        {
+            try
+            {
+                return await _database.Table<Product>()
+                    .Where(p => p.IsActive)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetAllProductsAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get all products: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<Product>> SearchProductsAsync(string searchTerm)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                    return await GetAllProductsAsync();
+
+                var lowerSearchTerm = searchTerm.ToLower();
+
+                return await _database.Table<Product>()
+                    .Where(p => p.IsActive &&
+                               (p.Name.ToLower().Contains(lowerSearchTerm) ||
+                                p.ProductCode.ToLower().Contains(lowerSearchTerm) ||
+                                p.Category.ToLower().Contains(lowerSearchTerm)))
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"SearchProductsAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to search products: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> UpdateProductAsync(Product product)
+        {
+            try
+            {
+                if (product == null)
+                    throw new ArgumentNullException(nameof(product));
+
+                // Validate product data
+                if (string.IsNullOrWhiteSpace(product.ProductCode))
+                    throw new ArgumentException("Product code is required");
+
+                if (string.IsNullOrWhiteSpace(product.Name))
+                    throw new ArgumentException("Product name is required");
+
+                // Check if product code is taken by another product
+                var existingProduct = await GetProductByCodeAsync(product.ProductCode);
+                if (existingProduct != null && existingProduct.Id != product.Id)
+                    throw new InvalidOperationException("Product code already exists");
+
+                // Get old values for audit log
+                var oldProduct = await GetProductByIdAsync(product.Id);
+
+                // Update modification date
+                product.ModifiedDate = DateTime.Now;
+
+                // Update product
+                var result = await _database.UpdateAsync(product);
+
+                if (result > 0)
+                {
+                    // Log the update
+                    await LogActionAsync("Products", "UPDATE", product.Id.ToString(),
+                        oldProduct, product, GetCurrentUserId());
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateProductAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to update product: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> DeleteProductAsync(int id)
+        {
+            try
+            {
+                var product = await GetProductByIdAsync(id);
+                if (product == null)
+                    return false;
+
+                // Soft delete - mark as inactive
+                product.IsActive = false;
+                product.ModifiedDate = DateTime.Now;
+
+                var result = await _database.UpdateAsync(product);
+
+                if (result > 0)
+                {
+                    // Log the deletion
+                    await LogActionAsync("Products", "DELETE", id.ToString(),
+                        product, new { IsActive = false, ModifiedDate = DateTime.Now }, GetCurrentUserId());
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DeleteProductAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to delete product: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> UpdateProductStockAsync(int productId, decimal newStock)
+        {
+            try
+            {
+                var product = await GetProductByIdAsync(productId);
+                if (product == null)
+                    return false;
+
+                var oldStock = product.Stock;
+                product.Stock = newStock;
+                product.ModifiedDate = DateTime.Now;
+
+                var result = await _database.UpdateAsync(product);
+
+                if (result > 0)
+                {
+                    // Log the stock update
+                    await LogActionAsync("Products", "STOCK_UPDATE", productId.ToString(),
+                        new { OldStock = oldStock },
+                        new { NewStock = newStock, ModifiedDate = DateTime.Now },
+                        GetCurrentUserId());
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateProductStockAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to update product stock: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<Product>> GetLowStockProductsAsync()
+        {
+            try
+            {
+                return await _database.Table<Product>()
+                    .Where(p => p.IsActive && p.Stock <= p.MinStock)
+                    .OrderBy(p => p.Stock)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetLowStockProductsAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get low stock products: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<Product>> GetProductsByCategoryAsync(string category)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(category))
+                    return await GetAllProductsAsync();
+
+                return await _database.Table<Product>()
+                    .Where(p => p.IsActive && p.Category == category)
+                    .OrderBy(p => p.Name)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetProductsByCategoryAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get products by category: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<string>> GetProductCategoriesAsync()
+        {
+            try
+            {
+                var categories = await _database.Table<Product>()
+                    .Where(p => p.IsActive && !string.IsNullOrEmpty(p.Category))
+                    .ToListAsync();
+
+                return categories.Select(p => p.Category)
+                                .Distinct()
+                                .Where(c => !string.IsNullOrWhiteSpace(c))
+                                .OrderBy(c => c)
+                                .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetProductCategoriesAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get product categories: {ex.Message}", ex);
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods
+
+        private int GetCurrentUserId()
+        {
+            // This should return the current user's ID
+            // You might want to get this from your authentication service
+            try
+            {
+                // For now, return a default user ID
+                // In a real implementation, you would get this from your authentication service
+                return 1; // Default admin user ID
+            }
+            catch
+            {
+                return 1; // Fallback to admin user
+            }
+        }
+
+        #endregion
         // Stub implementations for remaining interface methods
         public Task<Transaction> CreateTransactionAsync(Transaction transaction) => throw new NotImplementedException();
         public Task<Transaction> GetTransactionByIdAsync(int id) => throw new NotImplementedException();
@@ -678,14 +986,6 @@ namespace SEFApp.Services
         public Task<List<TransactionItem>> GetTransactionItemsAsync(int transactionId) => throw new NotImplementedException();
         public Task<bool> UpdateTransactionItemAsync(TransactionItem item) => throw new NotImplementedException();
         public Task<bool> DeleteTransactionItemAsync(int id) => throw new NotImplementedException();
-        public Task<Product> CreateProductAsync(Product product) => throw new NotImplementedException();
-        public Task<Product> GetProductByIdAsync(int id) => throw new NotImplementedException();
-        public Task<Product> GetProductByCodeAsync(string code) => throw new NotImplementedException();
-        public Task<List<Product>> GetAllProductsAsync() => throw new NotImplementedException();
-        public Task<List<Product>> SearchProductsAsync(string searchTerm) => throw new NotImplementedException();
-        public Task<bool> UpdateProductAsync(Product product) => throw new NotImplementedException();
-        public Task<bool> DeleteProductAsync(int id) => throw new NotImplementedException();
-        public Task<bool> UpdateProductStockAsync(int productId, decimal newStock) => throw new NotImplementedException();
         public Task<List<AuditLog>> GetAuditLogsAsync(DateTime? startDate = null, DateTime? endDate = null, int? userId = null) => throw new NotImplementedException();
         public Task<FiscalDevice> CreateFiscalDeviceAsync(FiscalDevice device) => throw new NotImplementedException();
         public Task<List<FiscalDevice>> GetFiscalDevicesAsync() => throw new NotImplementedException();
@@ -694,7 +994,6 @@ namespace SEFApp.Services
         public Task<bool> SetDefaultFiscalDeviceAsync(int deviceId) => throw new NotImplementedException();
         public Task<List<Transaction>> GetTopTransactionsAsync(int count = 10) => throw new NotImplementedException();
         public Task<Dictionary<string, decimal>> GetSalesByDateAsync(DateTime startDate, DateTime endDate) => throw new NotImplementedException();
-        public Task<List<Product>> GetLowStockProductsAsync() => throw new NotImplementedException();
         public Task BackupDatabaseAsync(string backupPath) => throw new NotImplementedException();
         public Task RestoreDatabaseAsync(string backupPath) => throw new NotImplementedException();
         public Task ChangePasswordAsync(string oldPassword, string newPassword) => throw new NotImplementedException();

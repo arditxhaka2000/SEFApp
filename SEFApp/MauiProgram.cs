@@ -3,47 +3,54 @@ using SEFApp.Services;
 using SEFApp.Services.Interfaces;
 using SEFApp.ViewModels;
 using SEFApp.Views;
-using SEFApp.Converters;
-using System.Text.Json;
-using System.Text;
-using System.Globalization;
 
-namespace SEFApp;
-
-public static class MauiProgram
+namespace SEFApp
 {
-    public static MauiApp CreateMauiApp()
+    public static class MauiProgram
     {
-        var builder = MauiApp.CreateBuilder();
-        builder
-            .UseMauiApp<App>()
-            .ConfigureFonts(fonts =>
+        public static MauiApp CreateMauiApp()
+        {
+            var builder = MauiApp.CreateBuilder();
+            builder
+                .UseMauiApp<App>()
+                .ConfigureFonts(fonts =>
+                {
+                    fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
+                });
+
+            // Remove the Blazor WebView line - not needed for native MAUI app
+            // builder.Services.AddMauiBlazorWebView();
+
+#if DEBUG
+            builder.Services.AddLogging(logging =>
             {
-                fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
-                fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
+                logging.AddDebug();
             });
+#endif
 
-        // SQLCipher initialization - let sqlite-net-sqlcipher handle it automatically
-        // No manual initialization needed
+            // Register Services
+            builder.Services.AddSingleton<IPreferencesService, PreferencesService>();
+            builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
+            builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
+            builder.Services.AddSingleton<INavigationService, NavigationService>();
+            builder.Services.AddSingleton<IAlertService, AlertService>();
 
-        // Register Services (no HttpClient needed for local auth)
-        builder.Services.AddSingleton<IPreferencesService, PreferencesService>();
-        builder.Services.AddSingleton<INavigationService, NavigationService>();
-        builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
-        // Add Database Service
-        builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
-        builder.Services.AddSingleton<IAlertService, AlertService>();
-        // Register ViewModels
-        builder.Services.AddTransient<LoginViewModel>();
+            // Register ViewModels
+            builder.Services.AddTransient<LoginViewModel>();
+            builder.Services.AddTransient<DashboardViewModel>();
+            builder.Services.AddTransient<ProductViewModel>();
+            builder.Services.AddTransient<AddProductModalViewModel>();
+            builder.Services.AddTransient<TransactionsViewModel>();
 
-        // Register Views
-        builder.Services.AddTransient<LoginPage>();
-        builder.Services.AddTransient<DashboardViewModel>();
-        builder.Services.AddTransient<DashboardPage>();
-        builder.Services.AddTransient<SettingsView>();
-        // Register Converters
-        builder.Services.AddSingleton<InvertedBoolConverter>();
+            // Register Views
+            builder.Services.AddTransient<LoginPage>();
+            builder.Services.AddTransient<DashboardPage>();
+            builder.Services.AddTransient<ProductsPage>();
+            builder.Services.AddTransient<AddProductModal>();
+            builder.Services.AddTransient<TransactionsPage>();
+            builder.Services.AddTransient<SettingsView>();
 
-        return builder.Build();
+            return builder.Build();
+        }
     }
 }

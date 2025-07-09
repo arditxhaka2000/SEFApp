@@ -1,0 +1,162 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="SEFApp.Views.ProductsPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Products"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Add"
+                     IconImageSource="add.png"
+                     Command="{Binding AddProductCommand}"
+                     Priority="0" />
+        <ToolbarItem Text="Refresh"
+                     IconImageSource="refresh.png"
+                     Command="{Binding RefreshCommand}"
+                     Priority="1" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,*">
+
+        <!-- Search Bar -->
+        <Frame Grid.Row="0"
+               BackgroundColor="{DynamicResource SurfaceColor}"
+               CornerRadius="10"
+               Padding="15"
+               Margin="20,20,20,10"
+               HasShadow="True">
+            <Grid ColumnDefinitions="*,Auto">
+                <SearchBar Grid.Column="0"
+                           Text="{Binding SearchText}"
+                           Placeholder="Search products..."
+                           BackgroundColor="Transparent"
+                           TextColor="{DynamicResource PrimaryTextColor}"
+                           PlaceholderColor="{DynamicResource SecondaryTextColor}"
+                           SearchCommand="{Binding SearchCommand}"/>
+                <Button Grid.Column="1"
+                        Text="🔍"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        Command="{Binding SearchCommand}"
+                        Padding="10,0"/>
+            </Grid>
+        </Frame>
+
+        <!-- Products List -->
+        <RefreshView Grid.Row="1"
+                     IsRefreshing="{Binding IsLoading}"
+                     Command="{Binding RefreshCommand}"
+                     RefreshColor="{DynamicResource PrimaryColor}">
+
+            <CollectionView ItemsSource="{Binding FilteredProducts}"
+                            EmptyView="No products found"
+                            BackgroundColor="Transparent">
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame BackgroundColor="{DynamicResource SurfaceColor}"
+                               CornerRadius="10"
+                               Padding="15"
+                               Margin="20,5"
+                               HasShadow="True">
+                            <Grid ColumnDefinitions="*,Auto,Auto">
+
+                                <!-- Product Info -->
+                                <StackLayout Grid.Column="0" Spacing="5">
+                                    <Label Text="{Binding Name}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                                    <Label FontSize="14" TextColor="{DynamicResource SecondaryTextColor}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Code: " FontAttributes="Bold"/>
+                                                <Span Text="{Binding ProductCode}"/>
+                                                <Span Text=" | Category: " FontAttributes="Bold"/>
+                                                <Span Text="{Binding Category}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+
+                                    <Label FontSize="14" TextColor="{DynamicResource SecondaryTextColor}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Price: " FontAttributes="Bold"/>
+                                                <Span Text="{Binding Price, StringFormat='€{0:F2}'}"/>
+                                                <Span Text=" | Stock: " FontAttributes="Bold"/>
+                                                <Span Text="{Binding Stock, StringFormat='{0:F0}'}"/>
+                                                <Span Text=" "/>
+                                                <Span Text="{Binding Unit}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+
+                                    <Label FontSize="12" TextColor="{DynamicResource InfoColor}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Tax: " FontAttributes="Bold"/>
+                                                <Span Text="{Binding TaxRate, StringFormat='{0:P0}'}"/>
+                                                <Span Text=" | Status: " FontAttributes="Bold"/>
+                                                <Span Text="{Binding IsActive, Converter={StaticResource BoolToStringConverter}, ConverterParameter='Active|Inactive'}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </StackLayout>
+
+                                <!-- Stock Status Indicator -->
+                                <StackLayout Grid.Column="1" 
+                                             VerticalOptions="Center"
+                                             Margin="10,0">
+                                    <Label Text="{Binding Stock, Converter={StaticResource StockStatusConverter}}"
+                                           FontSize="24"
+                                           HorizontalOptions="Center"/>
+                                    <Label Text="{Binding Stock, Converter={StaticResource StockStatusTextConverter}}"
+                                           FontSize="10"
+                                           HorizontalOptions="Center"
+                                           TextColor="{DynamicResource SecondaryTextColor}"/>
+                                </StackLayout>
+
+                                <!-- Action Buttons -->
+                                <StackLayout Grid.Column="2" 
+                                             Orientation="Horizontal" 
+                                             Spacing="5"
+                                             VerticalOptions="Center">
+                                    <Button Text="✏️"
+                                            BackgroundColor="{DynamicResource InfoColor}"
+                                            TextColor="White"
+                                            FontSize="14"
+                                            CornerRadius="15"
+                                            WidthRequest="35"
+                                            HeightRequest="35"
+                                            Padding="0"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.EditProductCommand}"
+                                            CommandParameter="{Binding .}"/>
+
+                                    <Button Text="🗑️"
+                                            BackgroundColor="{DynamicResource ErrorColor}"
+                                            TextColor="White"
+                                            FontSize="14"
+                                            CornerRadius="15"
+                                            WidthRequest="35"
+                                            HeightRequest="35"
+                                            Padding="0"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.DeleteProductCommand}"
+                                            CommandParameter="{Binding .}"/>
+                                </StackLayout>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="1"
+                           IsVisible="{Binding IsLoading}"
+                           IsRunning="{Binding IsLoading}"
+                           Color="{DynamicResource PrimaryColor}"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"/>
+    </Grid>
+</ContentPage>

@@ -53,7 +53,7 @@ namespace SEFApp.Services.Interfaces
         Task<bool> UpdateProductAsync(Product product);
         Task<bool> DeleteProductAsync(int id);
         Task<bool> UpdateProductStockAsync(int productId, decimal newStock);
-
+        Task<List<string>> GetProductCategoriesAsync();
         // Settings management
         Task<string> GetSettingAsync(string key, string defaultValue = null);
         Task<bool> SetSettingAsync(string key, string value, string description = null);

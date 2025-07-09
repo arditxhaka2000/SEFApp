@@ -1,0 +1,240 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="SEFApp.Views.TransactionsPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Transactions"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="New"
+                     IconImageSource="add.png"
+                     Command="{Binding NewTransactionCommand}"
+                     Priority="0" />
+        <ToolbarItem Text="Refresh"
+                     IconImageSource="refresh.png"
+                     Command="{Binding RefreshCommand}"
+                     Priority="1" />
+    </ContentPage.ToolbarItems>
+
+    <Grid RowDefinitions="Auto,Auto,*">
+
+        <!-- Header Stats -->
+        <Frame Grid.Row="0"
+               BackgroundColor="{DynamicResource PrimaryColor}"
+               CornerRadius="10"
+               Padding="20"
+               Margin="20,20,20,10"
+               HasShadow="True">
+            <Grid ColumnDefinitions="*,*,*">
+                <StackLayout Grid.Column="0" HorizontalOptions="Center">
+                    <Label Text="📊"
+                           FontSize="24"
+                           HorizontalOptions="Center"/>
+                    <Label Text="Today"
+                           FontSize="12"
+                           TextColor="White"
+                           HorizontalOptions="Center"/>
+                    <Label Text="{Binding TodayCount}"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center"/>
+                </StackLayout>
+
+                <StackLayout Grid.Column="1" HorizontalOptions="Center">
+                    <Label Text="💰"
+                           FontSize="24"
+                           HorizontalOptions="Center"/>
+                    <Label Text="Revenue"
+                           FontSize="12"
+                           TextColor="White"
+                           HorizontalOptions="Center"/>
+                    <Label Text="{Binding TodayRevenue, StringFormat='€{0:F2}'}"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center"/>
+                </StackLayout>
+
+                <StackLayout Grid.Column="2" HorizontalOptions="Center">
+                    <Label Text="📈"
+                           FontSize="24"
+                           HorizontalOptions="Center"/>
+                    <Label Text="Total"
+                           FontSize="12"
+                           TextColor="White"
+                           HorizontalOptions="Center"/>
+                    <Label Text="{Binding TotalTransactions}"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="White"
+                           HorizontalOptions="Center"/>
+                </StackLayout>
+            </Grid>
+        </Frame>
+
+        <!-- Filter Options -->
+        <Frame Grid.Row="1"
+               BackgroundColor="{DynamicResource SurfaceColor}"
+               CornerRadius="10"
+               Padding="15"
+               Margin="20,5,20,10"
+               HasShadow="True">
+            <Grid ColumnDefinitions="*,Auto,Auto">
+                <SearchBar Grid.Column="0"
+                           Text="{Binding SearchText}"
+                           Placeholder="Search transactions..."
+                           BackgroundColor="Transparent"
+                           TextColor="{DynamicResource PrimaryTextColor}"
+                           PlaceholderColor="{DynamicResource SecondaryTextColor}"
+                           SearchCommand="{Binding SearchCommand}"/>
+
+                <Picker Grid.Column="1"
+                        Title="Status"
+                        ItemsSource="{Binding StatusOptions}"
+                        SelectedItem="{Binding SelectedStatus}"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource PrimaryTextColor}"
+                        MinimumWidthRequest="100"
+                        Margin="10,0,0,0"/>
+
+                <Button Grid.Column="2"
+                        Text="📅"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource PrimaryColor}"
+                        Command="{Binding FilterByDateCommand}"
+                        Padding="10,0"
+                        Margin="5,0,0,0"/>
+            </Grid>
+        </Frame>
+
+        <!-- Transactions List -->
+        <RefreshView Grid.Row="2"
+                     IsRefreshing="{Binding IsLoading}"
+                     Command="{Binding RefreshCommand}"
+                     RefreshColor="{DynamicResource PrimaryColor}">
+
+            <CollectionView ItemsSource="{Binding FilteredTransactions}"
+                            EmptyView="No transactions found"
+                            BackgroundColor="Transparent">
+
+                <CollectionView.ItemTemplate>
+                    <DataTemplate>
+                        <Frame BackgroundColor="{DynamicResource SurfaceColor}"
+                               CornerRadius="10"
+                               Padding="15"
+                               Margin="20,5"
+                               HasShadow="True">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+
+                                <!-- Transaction Icon -->
+                                <StackLayout Grid.Column="0" 
+                                             VerticalOptions="Center"
+                                             Margin="0,0,15,0">
+                                    <Label Text="{Binding Status, Converter={StaticResource TransactionStatusIconConverter}}"
+                                           FontSize="24"
+                                           HorizontalOptions="Center"/>
+                                    <Label Text="{Binding Status}"
+                                           FontSize="10"
+                                           HorizontalOptions="Center"
+                                           TextColor="{DynamicResource SecondaryTextColor}"/>
+                                </StackLayout>
+
+                                <!-- Transaction Info -->
+                                <StackLayout Grid.Column="1" Spacing="3">
+                                    <Label Text="{Binding TransactionNumber}"
+                                           FontSize="16"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                                    <Label TextColor="{DynamicResource SecondaryTextColor}" FontSize="14">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Customer: " FontAttributes="Bold"/>
+                                                <Span Text="{Binding CustomerName}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+
+                                    <Label TextColor="{DynamicResource SecondaryTextColor}" FontSize="14">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Date: " FontAttributes="Bold"/>
+                                                <Span Text="{Binding TransactionDate, StringFormat='{0:MM/dd/yyyy HH:mm}'}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+
+                                    <Label TextColor="{DynamicResource SecondaryTextColor}" FontSize="14">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="Payment: " FontAttributes="Bold"/>
+                                                <Span Text="{Binding PaymentMethod}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </StackLayout>
+
+                                <!-- Amount and Actions -->
+                                <StackLayout Grid.Column="2" 
+                                             VerticalOptions="Center"
+                                             HorizontalOptions="End">
+                                    <Label Text="{Binding TotalAmount, StringFormat='€{0:F2}'}"
+                                           FontSize="18"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource PrimaryColor}"
+                                           HorizontalOptions="End"/>
+
+                                    <Label Text="{Binding SubTotal, StringFormat='Sub: €{0:F2}'}"
+                                           FontSize="12"
+                                           TextColor="{DynamicResource SecondaryTextColor}"
+                                           HorizontalOptions="End"/>
+
+                                    <Label Text="{Binding TaxAmount, StringFormat='Tax: €{0:F2}'}"
+                                           FontSize="12"
+                                           TextColor="{DynamicResource SecondaryTextColor}"
+                                           HorizontalOptions="End"/>
+
+                                    <StackLayout Orientation="Horizontal" 
+                                                 Spacing="5"
+                                                 HorizontalOptions="End"
+                                                 Margin="0,5,0,0">
+                                        <Button Text="👁️"
+                                                BackgroundColor="{DynamicResource InfoColor}"
+                                                TextColor="White"
+                                                FontSize="12"
+                                                CornerRadius="12"
+                                                WidthRequest="30"
+                                                HeightRequest="30"
+                                                Padding="0"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.ViewTransactionCommand}"
+                                                CommandParameter="{Binding .}"/>
+
+                                        <Button Text="🖨️"
+                                                BackgroundColor="{DynamicResource SecondaryColor}"
+                                                TextColor="White"
+                                                FontSize="12"
+                                                CornerRadius="12"
+                                                WidthRequest="30"
+                                                HeightRequest="30"
+                                                Padding="0"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type ContentPage}}, Path=BindingContext.PrintReceiptCommand}"
+                                                CommandParameter="{Binding .}"/>
+                                    </StackLayout>
+                                </StackLayout>
+                            </Grid>
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+        </RefreshView>
+
+        <!-- Loading Indicator -->
+        <ActivityIndicator Grid.Row="2"
+                           IsVisible="{Binding IsLoading}"
+                           IsRunning="{Binding IsLoading}"
+                           Color="{DynamicResource PrimaryColor}"
+                           VerticalOptions="Center"
+                           HorizontalOptions="Center"/>
+    </Grid>
+</ContentPage>

@@ -79,6 +79,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Compile Update="Views\AddProductModal.xaml.cs">
+		  <DependentUpon>AddProductModal.xaml</DependentUpon>
+		</Compile>
 		<Compile Update="Views\DashboardPage.xaml.cs">
 			<DependentUpon>DashboardPage.xaml</DependentUpon>
 		</Compile>
@@ -88,14 +91,23 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<MauiXaml Update="Views\AddProductModal.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 		<MauiXaml Update="Views\DashboardPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Views\LoginPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
+		<MauiXaml Update="Views\ProductsPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
 		<MauiXaml Update="Views\SettingsView.xaml">
 			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\TransactionsPage.xaml">
+		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 	</ItemGroup>
 

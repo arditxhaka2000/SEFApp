@@ -1,20 +1,103 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<Shell x:Class="SEFApp.AppShell"
-       xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-       xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-       xmlns:local="clr-namespace:SEFApp.Views"
-       Title="SEF Manager"
-       >
+<Shell
+    x:Class="SEFApp.AppShell"
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:local="clr-namespace:SEFApp.Views"
+    Title="SEF Manager"
+    FlyoutBehavior="Flyout">
 
-    <!-- Login Page -->
-    <ShellContent Title="Login" x:Name="LoginShellContent"
-                  Route="LoginPage"
-                  ContentTemplate="{DataTemplate local:LoginPage}" />
+    <Shell.Resources>
+        <ResourceDictionary>
+            <Style x:Key="BaseStyle" TargetType="Element">
+                <Setter Property="Shell.BackgroundColor" Value="{StaticResource PrimaryColor}" />
+                <Setter Property="Shell.ForegroundColor" Value="White" />
+                <Setter Property="Shell.TitleColor" Value="White" />
+                <Setter Property="Shell.DisabledColor" Value="#B4FFFFFF" />
+                <Setter Property="Shell.UnselectedColor" Value="#95FFFFFF" />
+                <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource PrimaryColor}" />
+                <Setter Property="Shell.TabBarForegroundColor" Value="White"/>
+                <Setter Property="Shell.TabBarUnselectedColor" Value="#95FFFFFF"/>
+                <Setter Property="Shell.TabBarTitleColor" Value="White"/>
+            </Style>
+            <Style TargetType="TabBar" BasedOn="{StaticResource BaseStyle}" />
+            <Style TargetType="FlyoutItem" BasedOn="{StaticResource BaseStyle}" />
+        </ResourceDictionary>
+    </Shell.Resources>
 
-    <!-- Dashboard Page --><!--
-    <ShellContent Title="Dashboard" 
-                  x:Name="DashboardShellContent"
-                  Route="DashboardPage"
-                  ContentTemplate="{DataTemplate local:DashboardPage}" />-->
+    <!-- Login Page (when not authenticated) -->
+    <ShellContent
+        x:Name="LoginShell"
+        Title="Login"
+        ContentTemplate="{DataTemplate local:LoginPage}"
+        Route="LoginPage"
+        Shell.FlyoutBehavior="Disabled" />
+
+    <!-- Main Application Shell (when authenticated) -->
+    <FlyoutItem Title="Dashboard" Icon="home.png">
+        <ShellContent
+            Title="Dashboard"
+            ContentTemplate="{DataTemplate local:DashboardPage}"
+            Route="DashboardPage" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Products" Icon="box.png">
+        <ShellContent
+            Title="Products"
+            ContentTemplate="{DataTemplate local:ProductsPage}"
+            Route="ProductsPage" />
+    </FlyoutItem>
+
+    <FlyoutItem Title="Transactions" Icon="receipt.png">
+        <ShellContent
+            Title="Transactions"
+            ContentTemplate="{DataTemplate local:TransactionsPage}"
+            Route="TransactionsPage" />
+    </FlyoutItem>
+
+    <!--<FlyoutItem Title="Reports" Icon="chart.png">
+        <ShellContent
+            Title="Reports"
+            ContentTemplate="{DataTemplate local:ReportsPage}"
+            Route="ReportsPage" />
+    </FlyoutItem>-->
+
+    <FlyoutItem Title="Settings" Icon="settings.png">
+        <ShellContent
+            Title="Settings"
+            ContentTemplate="{DataTemplate local:SettingsView}"
+            Route="Settings" />
+    </FlyoutItem>
+
+    <!-- Flyout Footer -->
+    <Shell.FlyoutFooter>
+        <Grid BackgroundColor="{StaticResource PrimaryColor}" 
+              HeightRequest="60" 
+              Padding="20,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackLayout Grid.Column="0" VerticalOptions="Center">
+                <Label Text="SEF Manager" 
+                       TextColor="White" 
+                       FontAttributes="Bold" 
+                       FontSize="16" />
+                <Label Text="v1.0.0" 
+                       TextColor="White" 
+                       FontSize="12" 
+                       Opacity="0.8" />
+            </StackLayout>
+
+            <Button Grid.Column="1"
+                    Text="Logout"
+                    TextColor="White"
+                    BackgroundColor="Transparent"
+                    FontSize="12"
+                    Command="{Binding LogoutCommand}"
+                    VerticalOptions="Center" />
+        </Grid>
+    </Shell.FlyoutFooter>
 
 </Shell>
