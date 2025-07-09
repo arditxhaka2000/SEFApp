@@ -23,6 +23,9 @@ public static class MauiProgram
                 fonts.AddFont("OpenSans-Semibold.ttf", "OpenSansSemibold");
             });
 
+        // Initialize SQLCipher
+        SQLitePCL.Batteries_V2.Init();
+
         // Register Services (no HttpClient needed for local auth)
         builder.Services.AddSingleton<IPreferencesService, PreferencesService>();
         builder.Services.AddSingleton<INavigationService, NavigationService>();

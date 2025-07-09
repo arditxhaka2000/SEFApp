@@ -20,51 +20,37 @@ namespace SEFApp.Services
         {
             try
             {
-                System.Diagnostics.Debug.WriteLine($"Attempting login for user: {username}");
-
                 if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(password))
                 {
-                    System.Diagnostics.Debug.WriteLine("Login failed: Username or password is empty");
                     return false;
                 }
 
-                // Setup database encryption for this user BEFORE validation
-                await _databaseService.SetEncryptionForUser(username, password);
+                // Initialize database for this user - this is where the magic happens!
+                await _databaseService.InitializeDatabaseForUser(username, password);
+
+                // Validate password
                 var isValid = await _databaseService.ValidatePasswordAsync(username, password);
                 if (isValid)
                 {
-                    // Get user details
                     var user = await _databaseService.GetUserByUsernameAsync(username);
 
                     if (user != null && user.IsActive)
                     {
                         _currentUser = user;
 
-                        // Update last login date
                         user.LastLoginDate = DateTime.Now;
                         await _databaseService.UpdateUserAsync(user);
 
-                        // Store authentication state
                         await _preferencesService.SetAsync("IsAuthenticated", true);
                         await _preferencesService.SetAsync("CurrentUserId", user.Id);
                         await _preferencesService.SetAsync("CurrentUsername", user.Username);
                         await _preferencesService.SetAsync("LoginTime", DateTime.Now);
 
-                        // Log the login
                         await _databaseService.LogActionAsync("Users", "LOGIN", user.Id.ToString(), null,
                             new { LoginTime = DateTime.Now, IPAddress = "Local" }, user.Id);
 
-                        System.Diagnostics.Debug.WriteLine($"Login successful for user: {username}");
                         return true;
                     }
-                    else
-                    {
-                        System.Diagnostics.Debug.WriteLine("Login failed: User not found or inactive");
-                    }
-                }
-                else
-                {
-                    System.Diagnostics.Debug.WriteLine("Login failed: Invalid credentials");
                 }
 
                 return false;
@@ -75,7 +61,6 @@ namespace SEFApp.Services
                 return false;
             }
         }
-
         public async Task<bool> LogoutAsync()
         {
             try
@@ -241,8 +226,9 @@ namespace SEFApp.Services
         {
             try
             {
-                var users = await _databaseService.GetAllUsersAsync();
-                return users.Count == 0;
+                // Check if encrypted database file exists
+                var databasePath = Path.Combine(FileSystem.AppDataDirectory, "sefmanager.db");
+                return !File.Exists(databasePath);
             }
             catch (Exception ex)
             {

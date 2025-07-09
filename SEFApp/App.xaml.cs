@@ -1,4 +1,5 @@
-﻿using SEFApp.Services.Interfaces;
+﻿using SEFApp.Services;
+using SEFApp.Services.Interfaces;
 
 namespace SEFApp
 {
@@ -11,18 +12,20 @@ namespace SEFApp
         public App(IAuthenticationService authService, IDatabaseService databaseService, IAlertService alertService)
         {
             InitializeComponent();
-
             _authService = authService;
             _databaseService = databaseService;
             _alertService = alertService;
-
-            // Set initial shell
             MainPage = new AppShell();
         }
 
         protected override async void OnStart()
         {
             await InitializeApplicationAsync();
+        }
+
+        protected override async void OnSleep()
+        {
+            base.OnSleep();
         }
 
         private async Task InitializeApplicationAsync()
@@ -34,13 +37,10 @@ namespace SEFApp
                 // Show loading
                 await _alertService.ShowLoadingAsync("Initializing application...");
 
-                // Initialize database
-                System.Diagnostics.Debug.WriteLine("Initializing database...");
-                await _databaseService.InitializeDatabaseAsync();
-                System.Diagnostics.Debug.WriteLine("Database initialized successfully");
+                // Check if encrypted database exists to determine if this is first run
+                var databasePath = Path.Combine(FileSystem.AppDataDirectory, "sefmanager.db");
+                var isFirstRun = !File.Exists(databasePath);
 
-                // Check if this is first run
-                var isFirstRun = await _authService.IsFirstRunAsync();
                 if (isFirstRun)
                 {
                     await _alertService.HideLoadingAsync();
@@ -48,7 +48,7 @@ namespace SEFApp
                     return;
                 }
 
-                // Check authentication status
+                // Check if user has stored credentials
                 System.Diagnostics.Debug.WriteLine("Checking authentication status...");
                 var isAuthenticated = await _authService.IsAuthenticatedAsync();
 
@@ -61,18 +61,14 @@ namespace SEFApp
                     var currentUser = await _authService.GetCurrentUserAsync();
                     System.Diagnostics.Debug.WriteLine($"User authenticated: {currentUser?.Username} - navigating to dashboard");
                     await Shell.Current.GoToAsync("DashboardPage");
+
+                    // Show welcome message
+                    await _alertService.ShowSuccessAsync($"Welcome back, {currentUser?.FullName ?? currentUser?.Username}!", "Welcome");
                 }
                 else
                 {
                     System.Diagnostics.Debug.WriteLine("User not authenticated - navigating to login");
                     await Shell.Current.GoToAsync("//LoginPage");
-                }
-
-                // Show welcome message for authenticated users
-                if (isAuthenticated)
-                {
-                    var user = await _authService.GetCurrentUserAsync();
-                    await _alertService.ShowSuccessAsync($"Welcome back, {user?.FullName ?? user?.Username}!", "Welcome");
                 }
             }
             catch (Exception ex)
@@ -98,7 +94,7 @@ namespace SEFApp
                 );
 
                 // Navigate to login
-                await Shell.Current.GoToAsync("LoginPage");
+                await Shell.Current.GoToAsync("//LoginPage");
             }
             catch (Exception ex)
             {
@@ -136,12 +132,10 @@ namespace SEFApp
 
                 if (retry)
                 {
-                    // Retry initialization
                     await InitializeApplicationAsync();
                 }
                 else
                 {
-                    // Exit application
                     System.Diagnostics.Debug.WriteLine("User chose to exit after initialization error");
                     Application.Current?.Quit();
                 }
@@ -149,11 +143,9 @@ namespace SEFApp
             catch (Exception alertEx)
             {
                 System.Diagnostics.Debug.WriteLine($"Error showing alert: {alertEx.Message}");
-
-                // Last resort - try to navigate to login page
                 try
                 {
-                    await Shell.Current.GoToAsync("LoginPage");
+                    await Shell.Current.GoToAsync("//LoginPage");
                 }
                 catch (Exception navEx)
                 {
@@ -162,34 +154,19 @@ namespace SEFApp
             }
         }
 
-        protected override void OnSleep()
-        {
-            System.Diagnostics.Debug.WriteLine("App going to sleep");
-
-            // Optionally clear sensitive data or pause operations
-            try
-            {
-                // You could implement auto-logout after sleep time
-                // or pause real-time updates
-            }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine($"OnSleep error: {ex.Message}");
-            }
-        }
-
         protected override async void OnResume()
         {
             System.Diagnostics.Debug.WriteLine("App resuming");
-
             try
             {
-                // Optionally re-verify authentication or refresh data
-                var isAuthenticated = await _authService.IsAuthenticatedAsync();
-                if (!isAuthenticated)
+                // Only check auth if database is already initialized
+                if (_databaseService is DatabaseService dbService && await dbService.IsDatabaseInitializedAsync())
                 {
-                    // Redirect to login if authentication expired
-                    await Shell.Current.GoToAsync("//LoginPage");
+                    var isAuthenticated = await _authService.IsAuthenticatedAsync();
+                    if (!isAuthenticated)
+                    {
+                        await Shell.Current.GoToAsync("//LoginPage");
+                    }
                 }
             }
             catch (Exception ex)

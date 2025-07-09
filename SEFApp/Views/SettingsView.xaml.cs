@@ -2,7 +2,10 @@
 using SEFApp.Models;
 using SEFApp.Models.Database;
 using SEFApp.Services.Interfaces;
+using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Text.RegularExpressions;
+using System.Windows.Input;
 
 namespace SEFApp.Views
 {
@@ -13,6 +16,8 @@ namespace SEFApp.Views
         private readonly IPreferencesService _preferencesService;
         private User _currentUser;
         private bool _isInitializing = false;
+        private ObservableCollection<UserViewModel> _users;
+
         public SettingsView(IAuthenticationService authService,
                            IDatabaseService databaseService,
                            IPreferencesService preferencesService)
@@ -21,10 +26,20 @@ namespace SEFApp.Views
             _authService = authService;
             _databaseService = databaseService;
             _preferencesService = preferencesService;
+            _users = new ObservableCollection<UserViewModel>();
+
+            // Set up the CollectionView binding
+            UsersCollectionView.ItemsSource = _users;
+            BindingContext = this;
+
+            // Set default role selection
+            NewUserRolePicker.SelectedIndex = 0; // Default to "User"
 
             LoadUserData();
             LoadApplicationSettings();
         }
+
+        public ICommand DeleteUserCommand => new Command<UserViewModel>(async (user) => await DeleteUser(user));
 
         protected override async void OnAppearing()
         {
@@ -50,6 +65,14 @@ namespace SEFApp.Views
                     LastLoginEntry.Text = _currentUser.LastLoginDate != DateTime.MinValue
                         ? _currentUser.LastLoginDate.ToString("yyyy-MM-dd HH:mm")
                         : "Never";
+
+                    // Show user management section only for admins
+                    UserManagementFrame.IsVisible = _currentUser.Role?.ToLower() == "admin";
+
+                    if (UserManagementFrame.IsVisible)
+                    {
+                        await LoadExistingUsers();
+                    }
                 }
             }
             catch (Exception ex)
@@ -63,11 +86,38 @@ namespace SEFApp.Views
             }
         }
 
+        private async Task LoadExistingUsers()
+        {
+            try
+            {
+                var users = await _databaseService.GetAllUsersAsync();
+                _users.Clear();
+
+                foreach (var user in users)
+                {
+                    _users.Add(new UserViewModel
+                    {
+                        Id = user.Id,
+                        Username = user.Username,
+                        FullName = user.FullName,
+                        Role = user.Role,
+                        LastLoginDate = user.LastLoginDate,
+                        CanDelete = user.Id != _currentUser.Id && user.Role?.ToLower() != "admin"
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Failed to load users: {ex.Message}");
+            }
+        }
+
         private async Task LoadApplicationSettings()
         {
             try
             {
                 _isInitializing = true;
+
                 // Load theme setting
                 var theme = await _preferencesService.GetAsync("app_theme", "System");
                 ThemePicker.SelectedItem = theme;
@@ -87,6 +137,10 @@ namespace SEFApp.Views
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to load app settings: {ex.Message}");
+            }
+            finally
+            {
+                _isInitializing = false;
             }
         }
 
@@ -161,6 +215,222 @@ namespace SEFApp.Views
                 LoadingIndicator.IsRunning = false;
             }
         }
+
+        #region User Management Methods
+
+        private void OnNewUserPasswordChanged(object sender, TextChangedEventArgs e)
+        {
+            ValidateNewUserForm();
+        }
+
+        private void OnNewUserConfirmPasswordChanged(object sender, TextChangedEventArgs e)
+        {
+            ValidateNewUserForm();
+        }
+
+        private void ValidateNewUserForm()
+        {
+            var username = NewUserUsernameEntry.Text ?? "";
+            var fullName = NewUserFullNameEntry.Text ?? "";
+            var password = NewUserPasswordEntry.Text ?? "";
+            var confirmPassword = NewUserConfirmPasswordEntry.Text ?? "";
+            var roleSelected = NewUserRolePicker.SelectedIndex >= 0;
+
+            bool isFormValid = true;
+            string validationMessage = "";
+
+            // Check if all required fields are filled
+            if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(fullName) ||
+                string.IsNullOrWhiteSpace(password) || string.IsNullOrWhiteSpace(confirmPassword) || !roleSelected)
+            {
+                isFormValid = false;
+            }
+            else
+            {
+                // Validate password length
+                if (password.Length < 6)
+                {
+                    isFormValid = false;
+                    validationMessage = "Password must be at least 6 characters";
+                }
+                // Validate password match
+                else if (password != confirmPassword)
+                {
+                    isFormValid = false;
+                    validationMessage = "Passwords do not match";
+                }
+                else
+                {
+                    validationMessage = "✓ Ready to create user";
+                    NewUserPasswordValidationLabel.TextColor = Colors.Green;
+                }
+            }
+
+            // Update validation label
+            if (!string.IsNullOrEmpty(validationMessage))
+            {
+                NewUserPasswordValidationLabel.Text = validationMessage;
+                NewUserPasswordValidationLabel.IsVisible = true;
+                if (validationMessage.StartsWith("✓"))
+                {
+                    NewUserPasswordValidationLabel.TextColor = Colors.Green;
+                }
+                else
+                {
+                    NewUserPasswordValidationLabel.TextColor = Colors.Red;
+                }
+            }
+            else
+            {
+                NewUserPasswordValidationLabel.IsVisible = false;
+            }
+
+            AddUserButton.IsEnabled = isFormValid;
+        }
+
+        private async void OnAddUserClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                LoadingIndicator.IsVisible = true;
+                LoadingIndicator.IsRunning = true;
+
+                var username = NewUserUsernameEntry.Text.Trim();
+                var fullName = NewUserFullNameEntry.Text.Trim();
+                var password = NewUserPasswordEntry.Text;
+                var role = NewUserRolePicker.SelectedItem.ToString();
+
+                // Double-check if username exists
+                var existingUser = await _databaseService.GetUserByUsernameAsync(username);
+                if (existingUser != null)
+                {
+                    await DisplayAlert("Error", "Username already exists. Please choose a different username.", "OK");
+                    return;
+                }
+
+                // Create new user
+                var newUser = new User
+                {
+                    Username = username,
+                    FullName = fullName,
+                    Role = role,
+                    CreatedDate = DateTime.Now,
+                    LastLoginDate = DateTime.MinValue,
+                    IsActive = true,
+                    IsFirstAccount = false
+                };
+
+                var success = await _databaseService.CreateUserAsync(newUser, password);
+
+                if (success)
+                {
+                    // Clear the form
+                    ClearNewUserForm();
+
+                    // Refresh the users list (this will read from the current temp database)
+                    await LoadExistingUsers();
+
+                    await DisplayAlert("Success", $"User '{username}' created successfully!", "OK");
+
+                    // Log the action
+                    await _databaseService.LogActionAsync("Users", "USER_CREATED",
+                        newUser.Id.ToString(), null,
+                        new { Username = username, FullName = fullName, Role = role, CreatedBy = _currentUser.Username },
+                        _currentUser.Id);
+                }
+                else
+                {
+                    await DisplayAlert("Error", "Failed to create user. Please try again.", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", $"An error occurred while creating user: {ex.Message}", "OK");
+            }
+            finally
+            {
+                LoadingIndicator.IsVisible = false;
+                LoadingIndicator.IsRunning = false;
+            }
+        }
+
+        private void ClearNewUserForm()
+        {
+            NewUserUsernameEntry.Text = "";
+            NewUserFullNameEntry.Text = "";
+            NewUserPasswordEntry.Text = "";
+            NewUserConfirmPasswordEntry.Text = "";
+            NewUserRolePicker.SelectedIndex = 0; // Reset to "User"
+            NewUserPasswordValidationLabel.IsVisible = false;
+            AddUserButton.IsEnabled = false;
+        }
+
+        private async Task DeleteUser(UserViewModel userViewModel)
+        {
+            try
+            {
+                var result = await DisplayAlert("Confirm Deletion",
+                    $"Are you sure you want to delete user '{userViewModel.Username}'?\n\nThis action cannot be undone.",
+                    "Delete", "Cancel");
+
+                if (!result) return;
+
+                LoadingIndicator.IsVisible = true;
+                LoadingIndicator.IsRunning = true;
+
+                var success = await _databaseService.DeleteUserAsync(userViewModel.Id);
+
+                if (success)
+                {
+                    // Remove from collection
+                    _users.Remove(userViewModel);
+
+                    await DisplayAlert("Success", $"User '{userViewModel.Username}' deleted successfully.", "OK");
+
+                    // Log the action
+                    await _databaseService.LogActionAsync("Users", "USER_DELETED",
+                        userViewModel.Id.ToString(), userViewModel,
+                        new { DeletedBy = _currentUser.Username, DeletedAt = DateTime.Now },
+                        _currentUser.Id);
+                }
+                else
+                {
+                    await DisplayAlert("Error", "Failed to delete user. Please try again.", "OK");
+                }
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", $"An error occurred while deleting user: {ex.Message}", "OK");
+            }
+            finally
+            {
+                LoadingIndicator.IsVisible = false;
+                LoadingIndicator.IsRunning = false;
+            }
+        }
+
+        private async void OnRefreshUsersClicked(object sender, EventArgs e)
+        {
+            try
+            {
+                LoadingIndicator.IsVisible = true;
+                LoadingIndicator.IsRunning = true;
+                await LoadExistingUsers();
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", $"Failed to refresh users: {ex.Message}", "OK");
+            }
+            finally
+            {
+                LoadingIndicator.IsVisible = false;
+                LoadingIndicator.IsRunning = false;
+            }
+        }
+
+        #endregion
+
+        #region Password Change Methods
 
         private void OnNewPasswordChanged(object sender, TextChangedEventArgs e)
         {
@@ -341,6 +611,10 @@ namespace SEFApp.Views
             }
         }
 
+        #endregion
+
+        #region Application Settings Methods
+
         private async void OnThemeChanged(object sender, EventArgs e)
         {
             if (_isInitializing) return;
@@ -389,6 +663,10 @@ namespace SEFApp.Views
                     "notifications_enabled", !e.Value, e.Value, _currentUser.Id);
             }
         }
+
+        #endregion
+
+        #region Data Export and Logout Methods
 
         private async void OnExportDataClicked(object sender, EventArgs e)
         {
@@ -481,6 +759,26 @@ namespace SEFApp.Views
                     LoadingIndicator.IsRunning = false;
                 }
             }
+        }
+
+        #endregion
+    }
+
+    // UserViewModel class for binding to CollectionView
+    public class UserViewModel : INotifyPropertyChanged
+    {
+        public int Id { get; set; }
+        public string Username { get; set; }
+        public string FullName { get; set; }
+        public string Role { get; set; }
+        public DateTime LastLoginDate { get; set; }
+        public bool CanDelete { get; set; }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected virtual void OnPropertyChanged([System.Runtime.CompilerServices.CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }

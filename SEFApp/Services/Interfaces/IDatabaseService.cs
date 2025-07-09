@@ -10,7 +10,8 @@ namespace SEFApp.Services.Interfaces
     public interface IDatabaseService
     {
         // Database management
-        Task InitializeDatabaseAsync();
+        Task InitializeDatabaseAsync(); 
+        Task InitializeDatabaseForUser(string username, string password);
         Task SetEncryptionForUser(string username, string password);
         Task<bool> IsDatabaseInitializedAsync();
         Task BackupDatabaseAsync(string backupPath);
@@ -18,7 +19,7 @@ namespace SEFApp.Services.Interfaces
         Task ChangePasswordAsync(string oldPassword, string newPassword);
 
         // User management
-        Task<User> CreateUserAsync(User user, string password);
+        Task<bool> CreateUserAsync(User user, string password);
         Task<User> GetUserByUsernameAsync(string username);
         Task<User> GetUserByIdAsync(int id);
         Task<List<User>> GetAllUsersAsync();

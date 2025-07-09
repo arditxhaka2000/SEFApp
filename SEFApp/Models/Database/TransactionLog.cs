@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SQLite;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -6,8 +7,10 @@ using System.Threading.Tasks;
 
 namespace SEFApp.Models.Database
 {
+    [Table("TransactionLogs")]
     public class TransactionLog
     {
+        [PrimaryKey, AutoIncrement]
         public int Id { get; set; }
         public int TransactionId { get; set; }
         public string Action { get; set; } // "CREATED", "UPDATED", "CANCELLED", "COMPLETED"

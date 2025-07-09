@@ -5,98 +5,98 @@
              Title="Settings"
              BackgroundColor="{DynamicResource PageBackgroundColor}">
 
-    <ScrollView>
-        <StackLayout Padding="20" Spacing="20">
+	<ScrollView>
+		<StackLayout Padding="20" Spacing="20">
 
-            <!-- Page Header -->
-            <Frame BackgroundColor="{DynamicResource PrimaryColor}" 
-                   CornerRadius="10" 
+			<!-- Page Header -->
+			<Frame BackgroundColor="{DynamicResource PrimaryColor}"
+                   CornerRadius="10"
                    Padding="20"
                    HasShadow="True">
-                <StackLayout Orientation="Horizontal" Spacing="15">
-                    <Label Text="⚙️" 
-                           FontSize="24" 
+				<StackLayout Orientation="Horizontal" Spacing="15">
+					<Label Text="⚙️"
+                           FontSize="24"
                            VerticalOptions="Center"/>
-                    <StackLayout>
-                        <Label Text="Settings" 
-                               FontSize="24" 
-                               FontAttributes="Bold" 
+					<StackLayout>
+						<Label Text="Settings"
+                               FontSize="24"
+                               FontAttributes="Bold"
                                TextColor="White"/>
-                        <Label Text="Manage your account and preferences" 
-                               FontSize="14" 
-                               TextColor="White" 
+						<Label Text="Manage your account and preferences"
+                               FontSize="14"
+                               TextColor="White"
                                Opacity="0.8"/>
-                    </StackLayout>
-                </StackLayout>
-            </Frame>
+					</StackLayout>
+				</StackLayout>
+			</Frame>
 
-            <!-- User Information Section -->
-            <Frame BackgroundColor="{DynamicResource SurfaceColor}" 
-                   CornerRadius="10" 
+			<!-- User Information Section -->
+			<Frame BackgroundColor="{DynamicResource SurfaceColor}"
+                   CornerRadius="10"
                    Padding="20"
                    HasShadow="True">
-                <StackLayout Spacing="15">
-                    <Label Text="User Information" 
-                           FontSize="18" 
-                           FontAttributes="Bold" 
+				<StackLayout Spacing="15">
+					<Label Text="User Information"
+                           FontSize="18"
+                           FontAttributes="Bold"
                            TextColor="{DynamicResource PrimaryTextColor}"/>
 
-                    <Grid RowDefinitions="Auto,Auto,Auto" 
-                          ColumnDefinitions="*,*" 
-                          RowSpacing="15" 
+					<Grid RowDefinitions="Auto,Auto,Auto"
+                          ColumnDefinitions="*,*"
+                          RowSpacing="15"
                           ColumnSpacing="15">
 
-                        <!-- Username -->
-                        <StackLayout Grid.Row="0" Grid.Column="0">
-                            <Label Text="Username" 
-                                   FontSize="14" 
-                                   FontAttributes="Bold" 
+						<!-- Username -->
+						<StackLayout Grid.Row="0" Grid.Column="0">
+							<Label Text="Username"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
                                    TextColor="{DynamicResource SecondaryTextColor}"/>
-                            <Entry x:Name="UsernameEntry" 
+							<Entry x:Name="UsernameEntry"
                                    Placeholder="Enter username"
                                    BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                    TextColor="{DynamicResource PrimaryTextColor}"/>
-                        </StackLayout>
+						</StackLayout>
 
-                        <!-- Full Name -->
-                        <StackLayout Grid.Row="0" Grid.Column="1">
-                            <Label Text="Full Name" 
-                                   FontSize="14" 
-                                   FontAttributes="Bold" 
+						<!-- Full Name -->
+						<StackLayout Grid.Row="0" Grid.Column="1">
+							<Label Text="Full Name"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
                                    TextColor="{DynamicResource SecondaryTextColor}"/>
-                            <Entry x:Name="FullNameEntry" 
+							<Entry x:Name="FullNameEntry"
                                    Placeholder="Enter full name"
                                    BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                    TextColor="{DynamicResource PrimaryTextColor}"/>
-                        </StackLayout>
+						</StackLayout>
 
-                        <!-- Role (Read-only) -->
-                        <StackLayout Grid.Row="1" Grid.Column="0">
-                            <Label Text="Role" 
-                                   FontSize="14" 
-                                   FontAttributes="Bold" 
+						<!-- Role (Read-only) -->
+						<StackLayout Grid.Row="1" Grid.Column="0">
+							<Label Text="Role"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
                                    TextColor="{DynamicResource SecondaryTextColor}"/>
-                            <Entry x:Name="RoleEntry" 
+							<Entry x:Name="RoleEntry"
                                    IsReadOnly="True"
                                    BackgroundColor="{DynamicResource DisabledBackgroundColor}"
                                    TextColor="{DynamicResource SecondaryTextColor}"/>
-                        </StackLayout>
+						</StackLayout>
 
-                        <!-- Last Login -->
-                        <StackLayout Grid.Row="1" Grid.Column="1">
-                            <Label Text="Last Login" 
-                                   FontSize="14" 
-                                   FontAttributes="Bold" 
+						<!-- Last Login -->
+						<StackLayout Grid.Row="1" Grid.Column="1">
+							<Label Text="Last Login"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
                                    TextColor="{DynamicResource SecondaryTextColor}"/>
-                            <Entry x:Name="LastLoginEntry" 
+							<Entry x:Name="LastLoginEntry"
                                    IsReadOnly="True"
                                    BackgroundColor="{DynamicResource DisabledBackgroundColor}"
                                    TextColor="{DynamicResource SecondaryTextColor}"/>
-                        </StackLayout>
-                    </Grid>
+						</StackLayout>
+					</Grid>
 
-                    <!-- Update Profile Button -->
-                    <Button x:Name="UpdateProfileButton"
+					<!-- Update Profile Button -->
+					<Button x:Name="UpdateProfileButton"
                             Text="Update Profile"
                             BackgroundColor="{DynamicResource SecondaryColor}"
                             TextColor="White"
@@ -104,85 +104,256 @@
                             CornerRadius="8"
                             Padding="15"
                             Clicked="OnUpdateProfileClicked"/>
-                </StackLayout>
-            </Frame>
+				</StackLayout>
+			</Frame>
 
-            <!-- Change Password Section -->
-            <Frame BackgroundColor="{DynamicResource SurfaceColor}" 
-                   CornerRadius="10" 
+			<!-- User Management Section (Admin Only) -->
+			<Frame x:Name="UserManagementFrame"
+                   BackgroundColor="{DynamicResource SurfaceColor}"
+                   CornerRadius="10"
                    Padding="20"
-                   HasShadow="True">
-                <StackLayout Spacing="15">
-                    <Label Text="Change Password" 
-                           FontSize="18" 
-                           FontAttributes="Bold" 
+                   HasShadow="True"
+                   IsVisible="False">
+				<StackLayout Spacing="15">
+					<Label Text="👥 User Management"
+                           FontSize="18"
+                           FontAttributes="Bold"
                            TextColor="{DynamicResource PrimaryTextColor}"/>
 
-                    <!-- Current Password -->
-                    <StackLayout>
-                        <Label Text="Current Password" 
-                               FontSize="14" 
-                               FontAttributes="Bold" 
+					<Label Text="Add New User"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource SecondaryTextColor}"/>
+
+					<Grid RowDefinitions="Auto,Auto,Auto,Auto"
+                          ColumnDefinitions="*,*"
+                          RowSpacing="15"
+                          ColumnSpacing="15">
+
+						<!-- New User Username -->
+						<StackLayout Grid.Row="0" Grid.Column="0">
+							<Label Text="Username*"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+							<Entry x:Name="NewUserUsernameEntry"
+                                   Placeholder="Enter username"
+                                   BackgroundColor="{DynamicResource EntryBackgroundColor}"
+                                   TextColor="{DynamicResource PrimaryTextColor}"/>
+						</StackLayout>
+
+						<!-- New User Full Name -->
+						<StackLayout Grid.Row="0" Grid.Column="1">
+							<Label Text="Full Name*"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+							<Entry x:Name="NewUserFullNameEntry"
+                                   Placeholder="Enter full name"
+                                   BackgroundColor="{DynamicResource EntryBackgroundColor}"
+                                   TextColor="{DynamicResource PrimaryTextColor}"/>
+						</StackLayout>
+
+						<!-- New User Password -->
+						<StackLayout Grid.Row="1" Grid.Column="0">
+							<Label Text="Password*"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+							<Entry x:Name="NewUserPasswordEntry"
+                                   Placeholder="Enter password"
+                                   IsPassword="True"
+                                   BackgroundColor="{DynamicResource EntryBackgroundColor}"
+                                   TextColor="{DynamicResource PrimaryTextColor}"
+                                   TextChanged="OnNewUserPasswordChanged"/>
+						</StackLayout>
+
+						<!-- Confirm New User Password -->
+						<StackLayout Grid.Row="1" Grid.Column="1">
+							<Label Text="Confirm Password*"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+							<Entry x:Name="NewUserConfirmPasswordEntry"
+                                   Placeholder="Confirm password"
+                                   IsPassword="True"
+                                   BackgroundColor="{DynamicResource EntryBackgroundColor}"
+                                   TextColor="{DynamicResource PrimaryTextColor}"
+                                   TextChanged="OnNewUserConfirmPasswordChanged"/>
+						</StackLayout>
+
+						<!-- Role Selection -->
+						<StackLayout Grid.Row="2" Grid.Column="0">
+							<Label Text="Role*"
+                                   FontSize="14"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+							<Picker x:Name="NewUserRolePicker"
+                                    Title="Select Role"
+                                    BackgroundColor="{DynamicResource EntryBackgroundColor}"
+                                    TextColor="{DynamicResource PrimaryTextColor}">
+								<Picker.Items>
+									<x:String>User</x:String>
+									<x:String>Admin</x:String>
+								</Picker.Items>
+							</Picker>
+						</StackLayout>
+					</Grid>
+
+					<!-- New User Password Validation -->
+					<Label x:Name="NewUserPasswordValidationLabel"
+                           Text="Password must be at least 6 characters"
+                           FontSize="12"
+                           TextColor="{DynamicResource DangerColor}"
+                           IsVisible="False"/>
+
+					<!-- Add User Button -->
+					<Button x:Name="AddUserButton"
+                            Text="➕ Add User"
+                            BackgroundColor="{DynamicResource PrimaryColor}"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            CornerRadius="8"
+                            Padding="15"
+                            IsEnabled="False"
+                            Clicked="OnAddUserClicked"/>
+
+					<!-- Existing Users List -->
+					<StackLayout x:Name="ExistingUsersSection" Spacing="10">
+						<Label Text="Existing Users"
+                               FontSize="16"
+                               FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Entry x:Name="CurrentPasswordEntry" 
+
+						<CollectionView x:Name="UsersCollectionView"
+                                        BackgroundColor="{DynamicResource EntryBackgroundColor}"
+                                        MaximumHeightRequest="300">
+							<CollectionView.ItemTemplate>
+								<DataTemplate>
+									<Grid Padding="15" ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+										<StackLayout Grid.Column="0">
+											<Label Text="{Binding FullName}"
+                                                   FontAttributes="Bold"
+                                                   TextColor="{DynamicResource PrimaryTextColor}"/>
+											<Label Text="{Binding Username}"
+                                                   FontSize="12"
+                                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+										</StackLayout>
+										<Label Grid.Column="1"
+                                               Text="{Binding Role}"
+                                               FontSize="12"
+                                               TextColor="{DynamicResource InfoColor}"
+                                               VerticalOptions="Center"/>
+										<Label Grid.Column="2"
+                                               Text="{Binding LastLoginDate, StringFormat='{0:MM/dd/yyyy}'}"
+                                               FontSize="10"
+                                               TextColor="{DynamicResource SecondaryTextColor}"
+                                               VerticalOptions="Center"/>
+										<Button Grid.Column="3"
+                                                Text="🗑️"
+                                                FontSize="14"
+                                                BackgroundColor="{DynamicResource DangerColor}"
+                                                TextColor="White"
+                                                CornerRadius="15"
+                                                WidthRequest="35"
+                                                HeightRequest="35"
+                                                Padding="0"
+                                                Command="{Binding Source={x:Reference UsersCollectionView}, Path=BindingContext.DeleteUserCommand}"
+                                                CommandParameter="{Binding .}"
+                                                IsVisible="{Binding CanDelete}"/>
+									</Grid>
+								</DataTemplate>
+							</CollectionView.ItemTemplate>
+						</CollectionView>
+
+						<Button x:Name="RefreshUsersButton"
+                                Text="🔄 Refresh Users"
+                                BackgroundColor="{DynamicResource InfoColor}"
+                                TextColor="White"
+                                FontAttributes="Bold"
+                                CornerRadius="8"
+                                Padding="10"
+                                Clicked="OnRefreshUsersClicked"/>
+					</StackLayout>
+				</StackLayout>
+			</Frame>
+
+			<!-- Change Password Section -->
+			<Frame BackgroundColor="{DynamicResource SurfaceColor}"
+                   CornerRadius="10"
+                   Padding="20"
+                   HasShadow="True">
+				<StackLayout Spacing="15">
+					<Label Text="Change Password"
+                           FontSize="18"
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+
+					<!-- Current Password -->
+					<StackLayout>
+						<Label Text="Current Password"
+                               FontSize="14"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource SecondaryTextColor}"/>
+						<Entry x:Name="CurrentPasswordEntry"
                                Placeholder="Enter current password"
                                IsPassword="True"
                                BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                TextColor="{DynamicResource PrimaryTextColor}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- New Password -->
-                    <StackLayout>
-                        <Label Text="New Password" 
-                               FontSize="14" 
-                               FontAttributes="Bold" 
+					<!-- New Password -->
+					<StackLayout>
+						<Label Text="New Password"
+                               FontSize="14"
+                               FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Entry x:Name="NewPasswordEntry" 
+						<Entry x:Name="NewPasswordEntry"
                                Placeholder="Enter new password"
                                IsPassword="True"
                                BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                TextColor="{DynamicResource PrimaryTextColor}"
                                TextChanged="OnNewPasswordChanged"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Confirm New Password -->
-                    <StackLayout>
-                        <Label Text="Confirm New Password" 
-                               FontSize="14" 
-                               FontAttributes="Bold" 
+					<!-- Confirm New Password -->
+					<StackLayout>
+						<Label Text="Confirm New Password"
+                               FontSize="14"
+                               FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <Entry x:Name="ConfirmPasswordEntry" 
+						<Entry x:Name="ConfirmPasswordEntry"
                                Placeholder="Confirm new password"
                                IsPassword="True"
                                BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                TextColor="{DynamicResource PrimaryTextColor}"
                                TextChanged="OnConfirmPasswordChanged"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Password Strength Indicator -->
-                    <StackLayout x:Name="PasswordStrengthContainer" 
+					<!-- Password Strength Indicator -->
+					<StackLayout x:Name="PasswordStrengthContainer"
                                  IsVisible="False">
-                        <Label Text="Password Strength:" 
-                               FontSize="12" 
+						<Label Text="Password Strength:"
+                               FontSize="12"
                                TextColor="{DynamicResource SecondaryTextColor}"/>
-                        <ProgressBar x:Name="PasswordStrengthBar" 
-                                     Progress="0" 
+						<ProgressBar x:Name="PasswordStrengthBar"
+                                     Progress="0"
                                      ProgressColor="{DynamicResource DangerColor}"/>
-                        <Label x:Name="PasswordStrengthLabel" 
-                               Text="Weak" 
-                               FontSize="12" 
+						<Label x:Name="PasswordStrengthLabel"
+                               Text="Weak"
+                               FontSize="12"
                                TextColor="{DynamicResource DangerColor}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Password Match Indicator -->
-                    <Label x:Name="PasswordMatchLabel" 
-                           Text="Passwords do not match" 
-                           FontSize="12" 
+					<!-- Password Match Indicator -->
+					<Label x:Name="PasswordMatchLabel"
+                           Text="Passwords do not match"
+                           FontSize="12"
                            TextColor="{DynamicResource DangerColor}"
                            IsVisible="False"/>
 
-                    <!-- Change Password Button -->
-                    <Button x:Name="ChangePasswordButton"
+					<!-- Change Password Button -->
+					<Button x:Name="ChangePasswordButton"
                             Text="Change Password"
                             BackgroundColor="{DynamicResource PrimaryColor}"
                             TextColor="White"
@@ -191,94 +362,94 @@
                             Padding="15"
                             IsEnabled="False"
                             Clicked="OnChangePasswordClicked"/>
-                </StackLayout>
-            </Frame>
+				</StackLayout>
+			</Frame>
 
-            <!-- Application Settings Section -->
-            <Frame BackgroundColor="{DynamicResource SurfaceColor}" 
-                   CornerRadius="10" 
+			<!-- Application Settings Section -->
+			<Frame BackgroundColor="{DynamicResource SurfaceColor}"
+                   CornerRadius="10"
                    Padding="20"
                    HasShadow="True">
-                <StackLayout Spacing="15">
-                    <Label Text="Application Settings" 
-                           FontSize="18" 
-                           FontAttributes="Bold" 
+				<StackLayout Spacing="15">
+					<Label Text="Application Settings"
+                           FontSize="18"
+                           FontAttributes="Bold"
                            TextColor="{DynamicResource PrimaryTextColor}"/>
 
-                    <!-- Theme Selection -->
-                    <StackLayout Orientation="Horizontal" Spacing="15">
-                        <Label Text="Theme" 
-                               FontSize="14" 
-                               FontAttributes="Bold" 
+					<!-- Theme Selection -->
+					<StackLayout Orientation="Horizontal" Spacing="15">
+						<Label Text="Theme"
+                               FontSize="14"
+                               FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"
                                VerticalOptions="Center"/>
-                        <Picker x:Name="ThemePicker" 
+						<Picker x:Name="ThemePicker"
                                 Title="Select Theme"
                                 BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                 TextColor="{DynamicResource PrimaryTextColor}"
                                 HorizontalOptions="FillAndExpand"
                                 SelectedIndexChanged="OnThemeChanged">
-                            <Picker.Items>
-                                <x:String>Light</x:String>
-                                <x:String>Dark</x:String>
-                                <x:String>System</x:String>
-                            </Picker.Items>
-                        </Picker>
-                    </StackLayout>
+							<Picker.Items>
+								<x:String>Light</x:String>
+								<x:String>Dark</x:String>
+								<x:String>System</x:String>
+							</Picker.Items>
+						</Picker>
+					</StackLayout>
 
-                    <!-- Language Selection -->
-                    <StackLayout Orientation="Horizontal" Spacing="15">
-                        <Label Text="Language" 
-                               FontSize="14" 
-                               FontAttributes="Bold" 
+					<!-- Language Selection -->
+					<StackLayout Orientation="Horizontal" Spacing="15">
+						<Label Text="Language"
+                               FontSize="14"
+                               FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"
                                VerticalOptions="Center"/>
-                        <Picker x:Name="LanguagePicker" 
+						<Picker x:Name="LanguagePicker"
                                 Title="Select Language"
                                 BackgroundColor="{DynamicResource EntryBackgroundColor}"
                                 TextColor="{DynamicResource PrimaryTextColor}"
                                 HorizontalOptions="FillAndExpand"
                                 SelectedIndexChanged="OnLanguageChanged">
-                            <Picker.Items>
-                                <x:String>English</x:String>
-                                <x:String>Albanian</x:String>
-                                <x:String>German</x:String>
-                                <x:String>French</x:String>
-                            </Picker.Items>
-                        </Picker>
-                    </StackLayout>
+							<Picker.Items>
+								<x:String>English</x:String>
+								<x:String>Albanian</x:String>
+								<x:String>German</x:String>
+								<x:String>French</x:String>
+							</Picker.Items>
+						</Picker>
+					</StackLayout>
 
-                    <!-- Auto Backup -->
-                    <StackLayout Orientation="Horizontal" Spacing="15">
-                        <Label Text="Auto Backup" 
-                               FontSize="14" 
-                               FontAttributes="Bold" 
+					<!-- Auto Backup -->
+					<StackLayout Orientation="Horizontal" Spacing="15">
+						<Label Text="Auto Backup"
+                               FontSize="14"
+                               FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"
                                VerticalOptions="Center"
                                HorizontalOptions="StartAndExpand"/>
-                        <Switch x:Name="AutoBackupSwitch" 
+						<Switch x:Name="AutoBackupSwitch"
                                 Toggled="OnAutoBackupToggled"
                                 OnColor="{DynamicResource PrimaryColor}"/>
-                    </StackLayout>
+					</StackLayout>
 
-                    <!-- Notifications -->
-                    <StackLayout Orientation="Horizontal" Spacing="15">
-                        <Label Text="Notifications" 
-                               FontSize="14" 
-                               FontAttributes="Bold" 
+					<!-- Notifications -->
+					<StackLayout Orientation="Horizontal" Spacing="15">
+						<Label Text="Notifications"
+                               FontSize="14"
+                               FontAttributes="Bold"
                                TextColor="{DynamicResource SecondaryTextColor}"
                                VerticalOptions="Center"
                                HorizontalOptions="StartAndExpand"/>
-                        <Switch x:Name="NotificationsSwitch" 
+						<Switch x:Name="NotificationsSwitch"
                                 Toggled="OnNotificationsToggled"
                                 OnColor="{DynamicResource PrimaryColor}"/>
-                    </StackLayout>
-                </StackLayout>
-            </Frame>
+					</StackLayout>
+				</StackLayout>
+			</Frame>
 
-            <!-- Action Buttons -->
-            <StackLayout Spacing="10">
-                <Button x:Name="ExportDataButton"
+			<!-- Action Buttons -->
+			<StackLayout Spacing="10">
+				<Button x:Name="ExportDataButton"
                         Text="📤 Export Data"
                         BackgroundColor="{DynamicResource InfoColor}"
                         TextColor="White"
@@ -287,7 +458,7 @@
                         Padding="15"
                         Clicked="OnExportDataClicked"/>
 
-                <Button x:Name="LogoutButton"
+				<Button x:Name="LogoutButton"
                         Text="🚪 Logout"
                         BackgroundColor="{DynamicResource DangerColor}"
                         TextColor="White"
@@ -295,16 +466,16 @@
                         CornerRadius="8"
                         Padding="15"
                         Clicked="OnLogoutClicked"/>
-            </StackLayout>
+			</StackLayout>
 
-            <!-- Loading Indicator -->
-            <ActivityIndicator x:Name="LoadingIndicator"
+			<!-- Loading Indicator -->
+			<ActivityIndicator x:Name="LoadingIndicator"
                                IsVisible="False"
                                IsRunning="False"
                                Color="{DynamicResource PrimaryColor}"
                                VerticalOptions="Center"
                                HorizontalOptions="Center"/>
 
-        </StackLayout>
-    </ScrollView>
+		</StackLayout>
+	</ScrollView>
 </ContentPage>
