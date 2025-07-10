@@ -8,14 +8,14 @@ namespace SEFApp
     {
         private readonly IAuthenticationService _authService;
         private readonly IAlertService _alertService;
+        private bool _hasNavigatedOnce = false;
 
-        public AppShell()
+        public AppShell(IAuthenticationService authService, IAlertService alertService)
         {
             InitializeComponent();
 
-            // Get services
-            _authService = DependencyService.Get<IAuthenticationService>();
-            _alertService = DependencyService.Get<IAlertService>();
+            _authService = authService;
+            _alertService = alertService;
 
             // Initialize commands
             LogoutCommand = new Command(async () => await LogoutAsync());
@@ -29,21 +29,120 @@ namespace SEFApp
 
         public ICommand LogoutCommand { get; }
 
+        // Simplified navigation override - only handle LoginPage specifically
+        protected override void OnNavigating(ShellNavigatingEventArgs args)
+        {
+            // Only intercept navigation to LoginPage specifically
+            if (args.Target.Location.OriginalString == "LoginPage" ||
+                args.Target.Location.OriginalString == "//LoginPage")
+            {
+                // Cancel the navigation
+                args.Cancel();
+
+                // Handle logout confirmation
+                MainThread.BeginInvokeOnMainThread(async () =>
+                {
+                    await Task.Delay(100); // Small delay to ensure Shell is ready
+                    await HandleLoginNavigation();
+                });
+
+                return;
+            }
+
+            base.OnNavigating(args);
+        }
+
+        private async Task HandleLoginNavigation()
+        {
+            try
+            {
+                if (Shell.Current == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Shell.Current is null, skipping navigation check");
+                    return;
+                }
+
+                if (_authService == null || _alertService == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("Services not available, proceeding to login");
+                    await Shell.Current.GoToAsync("//LoginPage");
+                    return;
+                }
+
+                bool isAuthenticated = await _authService.IsAuthenticatedAsync();
+
+                // Skip prompt on first navigation
+                if (!_hasNavigatedOnce)
+                {
+                    _hasNavigatedOnce = true;
+
+                    if (isAuthenticated)
+                    {
+                        // Just skip to dashboard or stay on current page
+                        return;
+                    }
+                    else
+                    {
+                        await Shell.Current.GoToAsync("//LoginPage");
+                        return;
+                    }
+                }
+
+                // After first navigation, show prompt if logged in
+                if (isAuthenticated)
+                {
+                    var result = await _alertService.ShowConfirmationAsync(
+                        "Already Logged In",
+                        "You are already logged in. Do you want to logout?",
+                        "Yes, Logout",
+                        "Cancel");
+
+                    if (result)
+                    {
+                        await _authService.LogoutAsync();
+                        await Shell.Current.GoToAsync("//LoginPage");
+                    }
+                }
+                else
+                {
+                    await Shell.Current.GoToAsync("//LoginPage");
+                }
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"HandleLoginNavigation error: {ex.Message}");
+
+                try
+                {
+                    if (Shell.Current != null)
+                    {
+                        await Shell.Current.GoToAsync("//LoginPage");
+                    }
+                }
+                catch (Exception navEx)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Fallback navigation also failed: {navEx.Message}");
+                }
+            }
+        }
+
+
         private void RegisterRoutes()
         {
             // Register routes for navigation
             Routing.RegisterRoute("LoginPage", typeof(LoginPage));
             Routing.RegisterRoute("DashboardPage", typeof(DashboardPage));
-            Routing.RegisterRoute("ProductsPage", typeof(ProductsPage));
             Routing.RegisterRoute("TransactionsPage", typeof(TransactionsPage));
             Routing.RegisterRoute("Settings", typeof(SettingsView));
 
             // Register modal routes
             Routing.RegisterRoute("AddProductModal", typeof(AddProductModal));
 
-            // Register future routes
+            // Register new routes
+            Routing.RegisterRoute("ProducsPage", typeof(ProductsPage));
             Routing.RegisterRoute("ReportsPage", typeof(ReportsPage));
             Routing.RegisterRoute("NewTransactionPage", typeof(NewTransactionPage));
+            Routing.RegisterRoute("SalesPage", typeof(SalesPage));
         }
 
         private async Task LogoutAsync()
@@ -69,39 +168,6 @@ namespace SEFApp
             {
                 await _alertService.ShowErrorAsync($"Logout failed: {ex.Message}");
             }
-        }
-    }
-
-    // Placeholder page classes for future implementation
-    public class ReportsPage : ContentPage
-    {
-        public ReportsPage()
-        {
-            Title = "Reports";
-            Content = new StackLayout
-            {
-                Children = {
-                    new Label { Text = "Reports Page - Coming Soon!",
-                              HorizontalOptions = LayoutOptions.Center,
-                              VerticalOptions = LayoutOptions.Center }
-                }
-            };
-        }
-    }
-
-    public class NewTransactionPage : ContentPage
-    {
-        public NewTransactionPage()
-        {
-            Title = "New Transaction";
-            Content = new StackLayout
-            {
-                Children = {
-                    new Label { Text = "New Transaction Page - Coming Soon!",
-                              HorizontalOptions = LayoutOptions.Center,
-                              VerticalOptions = LayoutOptions.Center }
-                }
-            };
         }
     }
 }

@@ -18,9 +18,6 @@ namespace SEFApp
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
-            // Remove the Blazor WebView line - not needed for native MAUI app
-            // builder.Services.AddMauiBlazorWebView();
-
 #if DEBUG
             builder.Services.AddLogging(logging =>
             {
@@ -28,12 +25,18 @@ namespace SEFApp
             });
 #endif
 
-            // Register Services
+            // Register Services (Order matters for dependencies)
             builder.Services.AddSingleton<IPreferencesService, PreferencesService>();
             builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
             builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
-            builder.Services.AddSingleton<INavigationService, NavigationService>();
             builder.Services.AddSingleton<IAlertService, AlertService>();
+
+            // Register NavigationService with IServiceProvider access
+            builder.Services.AddSingleton<INavigationService>(serviceProvider =>
+                new NavigationService(serviceProvider));
+
+            // Register AppShell
+            builder.Services.AddSingleton<AppShell>();
 
             // Register ViewModels
             builder.Services.AddTransient<LoginViewModel>();
@@ -41,7 +44,9 @@ namespace SEFApp
             builder.Services.AddTransient<ProductViewModel>();
             builder.Services.AddTransient<AddProductModalViewModel>();
             builder.Services.AddTransient<TransactionsViewModel>();
-
+            builder.Services.AddTransient<SalesViewModel>();
+            builder.Services.AddTransient<ReportsViewModel>();
+            builder.Services.AddTransient<NewTransactionViewModel>();
             // Register Views
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<DashboardPage>();
@@ -49,6 +54,8 @@ namespace SEFApp
             builder.Services.AddTransient<AddProductModal>();
             builder.Services.AddTransient<TransactionsPage>();
             builder.Services.AddTransient<SettingsView>();
+            builder.Services.AddTransient<SalesPage>();
+            builder.Services.AddTransient<ReportsPage>();
 
             return builder.Build();
         }

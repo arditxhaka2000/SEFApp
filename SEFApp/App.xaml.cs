@@ -8,14 +8,17 @@ namespace SEFApp
         private readonly IAuthenticationService _authService;
         private readonly IDatabaseService _databaseService;
         private readonly IAlertService _alertService;
+        private readonly AppShell _appShell;
 
-        public App(IAuthenticationService authService, IDatabaseService databaseService, IAlertService alertService)
+        public App(IAuthenticationService authService, IDatabaseService databaseService, IAlertService alertService, AppShell appShell)
         {
             InitializeComponent();
             _authService = authService;
             _databaseService = databaseService;
             _alertService = alertService;
-            MainPage = new AppShell();
+            _appShell = appShell;
+
+            MainPage = _appShell;
         }
 
         protected override async void OnStart()

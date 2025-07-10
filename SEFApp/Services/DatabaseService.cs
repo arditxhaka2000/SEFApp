@@ -973,27 +973,311 @@ namespace SEFApp.Services
                 return 1; // Fallback to admin user
             }
         }
+        #region Transaction Management Methods
+
+        public async Task<Transaction> CreateTransactionAsync(Transaction transaction)
+        {
+            try
+            {
+                if (transaction == null)
+                    throw new ArgumentNullException(nameof(transaction));
+
+                // Validate transaction data
+                if (string.IsNullOrWhiteSpace(transaction.TransactionNumber))
+                    throw new ArgumentException("Transaction number is required");
+
+                // Set creation date
+                transaction.CreatedDate = DateTime.Now;
+
+                // Insert transaction
+                var result = await _database.InsertAsync(transaction);
+                if (result > 0)
+                {
+                    // Log the creation
+                    await LogActionAsync("Transactions", "CREATE", transaction.Id.ToString(),
+                        null, transaction, GetCurrentUserId());
+
+                    return transaction;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateTransactionAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to create transaction: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<Transaction> GetTransactionByIdAsync(int id)
+        {
+            try
+            {
+                return await _database.Table<Transaction>()
+                    .Where(t => t.Id == id)
+                    .FirstOrDefaultAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetTransactionByIdAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get transaction by ID: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<Transaction>> GetTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                return await _database.Table<Transaction>()
+                    .Where(t => t.TransactionDate >= startDate && t.TransactionDate <= endDate)
+                    .OrderByDescending(t => t.TransactionDate)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetTransactionsByDateRangeAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get transactions by date range: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<Transaction>> GetTodaysTransactionsAsync()
+        {
+            try
+            {
+                var today = DateTime.Today;
+                var tomorrow = today.AddDays(1);
+
+                return await _database.Table<Transaction>()
+                    .Where(t => t.TransactionDate >= today && t.TransactionDate < tomorrow)
+                    .OrderByDescending(t => t.TransactionDate)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetTodaysTransactionsAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get today's transactions: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> UpdateTransactionAsync(Transaction transaction)
+        {
+            try
+            {
+                if (transaction == null)
+                    throw new ArgumentNullException(nameof(transaction));
+
+                // Get old values for audit log
+                var oldTransaction = await GetTransactionByIdAsync(transaction.Id);
+
+                // Update modification date
+                transaction.ModifiedDate = DateTime.Now;
+
+                // Update transaction
+                var result = await _database.UpdateAsync(transaction);
+
+                if (result > 0)
+                {
+                    // Log the update
+                    await LogActionAsync("Transactions", "UPDATE", transaction.Id.ToString(),
+                        oldTransaction, transaction, GetCurrentUserId());
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateTransactionAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to update transaction: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> DeleteTransactionAsync(int id)
+        {
+            try
+            {
+                var transaction = await GetTransactionByIdAsync(id);
+                if (transaction == null)
+                    return false;
+
+                // Soft delete - mark as cancelled
+                transaction.Status = "Cancelled";
+                transaction.ModifiedDate = DateTime.Now;
+
+                var result = await _database.UpdateAsync(transaction);
+
+                if (result > 0)
+                {
+                    // Log the deletion
+                    await LogActionAsync("Transactions", "DELETE", id.ToString(),
+                        transaction, new { Status = "Cancelled", ModifiedDate = DateTime.Now }, GetCurrentUserId());
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DeleteTransactionAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to delete transaction: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<Transaction>> GetTopTransactionsAsync(int count = 10)
+        {
+            try
+            {
+                return await _database.Table<Transaction>()
+                    .Where(t => t.Status == "Completed")
+                    .OrderByDescending(t => t.TotalAmount)
+                    .Take(count)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetTopTransactionsAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get top transactions: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<Dictionary<string, decimal>> GetSalesByDateAsync(DateTime startDate, DateTime endDate)
+        {
+            try
+            {
+                var transactions = await GetTransactionsByDateRangeAsync(startDate, endDate);
+                var completedTransactions = transactions.Where(t => t.Status == "Completed");
+
+                var salesByDate = completedTransactions
+                    .GroupBy(t => t.TransactionDate.Date)
+                    .ToDictionary(
+                        g => g.Key.ToString("yyyy-MM-dd"),
+                        g => g.Sum(t => t.TotalAmount)
+                    );
+
+                return salesByDate;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetSalesByDateAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get sales by date: {ex.Message}", ex);
+            }
+        }
 
         #endregion
+
+        #region Transaction Items Management
+
+        public async Task<TransactionItem> CreateTransactionItemAsync(TransactionItem item)
+        {
+            try
+            {
+                if (item == null)
+                    throw new ArgumentNullException(nameof(item));
+
+                var result = await _database.InsertAsync(item);
+                if (result > 0)
+                {
+                    await LogActionAsync("TransactionItems", "CREATE", item.Id.ToString(),
+                        null, item, GetCurrentUserId());
+
+                    return item;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"CreateTransactionItemAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to create transaction item: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<List<TransactionItem>> GetTransactionItemsAsync(int transactionId)
+        {
+            try
+            {
+                return await _database.Table<TransactionItem>()
+                    .Where(ti => ti.TransactionId == transactionId)
+                    .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"GetTransactionItemsAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to get transaction items: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> UpdateTransactionItemAsync(TransactionItem item)
+        {
+            try
+            {
+                if (item == null)
+                    throw new ArgumentNullException(nameof(item));
+
+                var oldItem = await _database.Table<TransactionItem>()
+                    .Where(ti => ti.Id == item.Id)
+                    .FirstOrDefaultAsync();
+
+                var result = await _database.UpdateAsync(item);
+
+                if (result > 0)
+                {
+                    await LogActionAsync("TransactionItems", "UPDATE", item.Id.ToString(),
+                        oldItem, item, GetCurrentUserId());
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"UpdateTransactionItemAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to update transaction item: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<bool> DeleteTransactionItemAsync(int id)
+        {
+            try
+            {
+                var item = await _database.Table<TransactionItem>()
+                    .Where(ti => ti.Id == id)
+                    .FirstOrDefaultAsync();
+
+                if (item == null)
+                    return false;
+
+                var result = await _database.DeleteAsync(item);
+
+                if (result > 0)
+                {
+                    await LogActionAsync("TransactionItems", "DELETE", id.ToString(),
+                        item, null, GetCurrentUserId());
+
+                    return true;
+                }
+
+                return false;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"DeleteTransactionItemAsync error: {ex.Message}");
+                throw new InvalidOperationException($"Failed to delete transaction item: {ex.Message}", ex);
+            }
+        }
+
+        #endregion
+        #endregion
         // Stub implementations for remaining interface methods
-        public Task<Transaction> CreateTransactionAsync(Transaction transaction) => throw new NotImplementedException();
-        public Task<Transaction> GetTransactionByIdAsync(int id) => throw new NotImplementedException();
-        public Task<List<Transaction>> GetTransactionsByDateRangeAsync(DateTime startDate, DateTime endDate) => throw new NotImplementedException();
-        public Task<List<Transaction>> GetTodaysTransactionsAsync() => throw new NotImplementedException();
-        public Task<bool> UpdateTransactionAsync(Transaction transaction) => throw new NotImplementedException();
-        public Task<bool> DeleteTransactionAsync(int id) => throw new NotImplementedException();
-        public Task<TransactionItem> CreateTransactionItemAsync(TransactionItem item) => throw new NotImplementedException();
-        public Task<List<TransactionItem>> GetTransactionItemsAsync(int transactionId) => throw new NotImplementedException();
-        public Task<bool> UpdateTransactionItemAsync(TransactionItem item) => throw new NotImplementedException();
-        public Task<bool> DeleteTransactionItemAsync(int id) => throw new NotImplementedException();
         public Task<List<AuditLog>> GetAuditLogsAsync(DateTime? startDate = null, DateTime? endDate = null, int? userId = null) => throw new NotImplementedException();
         public Task<FiscalDevice> CreateFiscalDeviceAsync(FiscalDevice device) => throw new NotImplementedException();
         public Task<List<FiscalDevice>> GetFiscalDevicesAsync() => throw new NotImplementedException();
         public Task<FiscalDevice> GetDefaultFiscalDeviceAsync() => throw new NotImplementedException();
         public Task<bool> UpdateFiscalDeviceAsync(FiscalDevice device) => throw new NotImplementedException();
         public Task<bool> SetDefaultFiscalDeviceAsync(int deviceId) => throw new NotImplementedException();
-        public Task<List<Transaction>> GetTopTransactionsAsync(int count = 10) => throw new NotImplementedException();
-        public Task<Dictionary<string, decimal>> GetSalesByDateAsync(DateTime startDate, DateTime endDate) => throw new NotImplementedException();
         public Task BackupDatabaseAsync(string backupPath) => throw new NotImplementedException();
         public Task RestoreDatabaseAsync(string backupPath) => throw new NotImplementedException();
         public Task ChangePasswordAsync(string oldPassword, string newPassword) => throw new NotImplementedException();

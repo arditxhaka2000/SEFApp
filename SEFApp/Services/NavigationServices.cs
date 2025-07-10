@@ -4,6 +4,13 @@ namespace SEFApp.Services
 {
     public class NavigationService : INavigationService
     {
+        private readonly IServiceProvider _serviceProvider;
+
+        public NavigationService(IServiceProvider serviceProvider)
+        {
+            _serviceProvider = serviceProvider;
+        }
+
         /// <summary>
         /// Navigate to a specific route/page
         /// </summary>
@@ -279,21 +286,52 @@ namespace SEFApp.Services
                     // Try different approaches based on route
                     if (route.Contains("Login") || route.Contains("login"))
                     {
-                        // For login, try setting as main page
+                        // For login, try creating new LoginPage with proper DI
                         if (Application.Current != null)
                         {
-                            Application.Current.MainPage = new Views.LoginPage(
-                                // You'll need to resolve these dependencies
-                                DependencyService.Get<ViewModels.LoginViewModel>()
-                            );
+                            try
+                            {
+                                var loginViewModel = _serviceProvider.GetService<ViewModels.LoginViewModel>();
+                                if (loginViewModel != null)
+                                {
+                                    Application.Current.MainPage = new Views.LoginPage(loginViewModel);
+                                }
+                                else
+                                {
+                                    // Fallback: try simple navigation
+                                    await Shell.Current.GoToAsync("//LoginPage");
+                                }
+                            }
+                            catch
+                            {
+                                // Last resort: try simple navigation
+                                await Shell.Current.GoToAsync("//LoginPage");
+                            }
                         }
                     }
                     else if (route.Contains("Main") || route.Contains("//"))
                     {
-                        // For main pages, try creating new shell
+                        // For main pages, try creating new shell with proper DI
                         if (Application.Current != null)
                         {
-                            Application.Current.MainPage = new AppShell();
+                            try
+                            {
+                                var appShell = _serviceProvider.GetService<AppShell>();
+                                if (appShell != null)
+                                {
+                                    Application.Current.MainPage = appShell;
+                                }
+                                else
+                                {
+                                    // Fallback: try simple navigation
+                                    await Shell.Current.GoToAsync("//LoginPage");
+                                }
+                            }
+                            catch
+                            {
+                                // Last resort: try simple navigation
+                                await Shell.Current.GoToAsync("//LoginPage");
+                            }
                         }
                     }
                     else

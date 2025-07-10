@@ -9,13 +9,16 @@
 
     <Shell.Resources>
         <ResourceDictionary>
+            <!-- Define colors locally if needed -->
+            <Color x:Key="LocalPrimaryColor">#1a73e8</Color>
+
             <Style x:Key="BaseStyle" TargetType="Element">
-                <Setter Property="Shell.BackgroundColor" Value="{StaticResource PrimaryColor}" />
+                <Setter Property="Shell.BackgroundColor" Value="{DynamicResource PrimaryColor}" />
                 <Setter Property="Shell.ForegroundColor" Value="White" />
                 <Setter Property="Shell.TitleColor" Value="White" />
                 <Setter Property="Shell.DisabledColor" Value="#B4FFFFFF" />
                 <Setter Property="Shell.UnselectedColor" Value="#95FFFFFF" />
-                <Setter Property="Shell.TabBarBackgroundColor" Value="{StaticResource PrimaryColor}" />
+                <Setter Property="Shell.TabBarBackgroundColor" Value="{DynamicResource PrimaryColor}" />
                 <Setter Property="Shell.TabBarForegroundColor" Value="White"/>
                 <Setter Property="Shell.TabBarUnselectedColor" Value="#95FFFFFF"/>
                 <Setter Property="Shell.TabBarTitleColor" Value="White"/>
@@ -47,6 +50,13 @@
             ContentTemplate="{DataTemplate local:ProductsPage}"
             Route="ProductsPage" />
     </FlyoutItem>
+    
+    <FlyoutItem Title="POS" Icon="appicon.png">
+        <ShellContent
+            Title="Products"
+            ContentTemplate="{DataTemplate local:SalesPage}"
+            Route="SalesPage" />
+    </FlyoutItem>
 
     <FlyoutItem Title="Transactions" Icon="receipt.png">
         <ShellContent
@@ -55,12 +65,12 @@
             Route="TransactionsPage" />
     </FlyoutItem>
 
-    <!--<FlyoutItem Title="Reports" Icon="chart.png">
+    <FlyoutItem Title="Reports" Icon="chart.png">
         <ShellContent
             Title="Reports"
             ContentTemplate="{DataTemplate local:ReportsPage}"
             Route="ReportsPage" />
-    </FlyoutItem>-->
+    </FlyoutItem>
 
     <FlyoutItem Title="Settings" Icon="settings.png">
         <ShellContent
@@ -71,7 +81,7 @@
 
     <!-- Flyout Footer -->
     <Shell.FlyoutFooter>
-        <Grid BackgroundColor="{StaticResource PrimaryColor}" 
+        <Grid BackgroundColor="{DynamicResource PrimaryColor}" 
               HeightRequest="60" 
               Padding="20,10">
             <Grid.ColumnDefinitions>

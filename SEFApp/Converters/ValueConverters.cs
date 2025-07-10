@@ -120,12 +120,17 @@ namespace SEFApp.Converters
         {
             if (value is string status)
             {
-                return status switch
+                return status?.ToLower() switch
                 {
-                    "Completed" => "✅",
-                    "Pending" => "⏳",
-                    "Cancelled" => "❌",
-                    "Refunded" => "🔄",
+                    "completed" => "✅",
+                    "pending" => "⏳",
+                    "cancelled" => "❌",
+                    "refunded" => "🔄",
+                    "draft" => "📝",
+                    "cash" => "💵",
+                    "card" => "💳",
+                    "bank transfer" => "🏦",
+                    "check" => "📄",
                     _ => "📄"
                 };
             }

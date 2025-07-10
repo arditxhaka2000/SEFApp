@@ -9,5 +9,16 @@ namespace SEFApp.Views
             InitializeComponent();
             BindingContext = viewModel;
         }
+
+        protected override async void OnAppearing()
+        {
+            base.OnAppearing();
+
+            // Refresh data when page appears
+            if (BindingContext is TransactionsViewModel viewModel)
+            {
+                viewModel.RefreshCommand.Execute(null);
+            }
+        }
     }
 }

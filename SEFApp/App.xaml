@@ -18,21 +18,28 @@
             <converters:CountToBoolConverter x:Key="CountToBoolConverter" />
             <converters:StringToBoolConverter x:Key="StringToBoolConverter" />
             <converters:CategoryBackgroundConverter x:Key="CategoryBackgroundConverter" />
-            <!-- Colors -->
+            <converters:TransactionStatusIconConverter x:Key="TransactionStatusIconConverter" />
+
+            <!-- Essential Colors -->
             <Color x:Key="PrimaryColor">#1a73e8</Color>
             <Color x:Key="SecondaryColor">#34a853</Color>
             <Color x:Key="ErrorColor">#ea4335</Color>
             <Color x:Key="WarningColor">#fbbc05</Color>
             <Color x:Key="InfoColor">#4285f4</Color>
             <Color x:Key="SuccessColor">#34a853</Color>
+            <Color x:Key="DangerColor">#ea4335</Color>
 
-            <!-- Light Theme Colors -->
+            <!-- Background Colors -->
             <Color x:Key="PageBackgroundColor">#f8f9fa</Color>
             <Color x:Key="SurfaceColor">#ffffff</Color>
-            <Color x:Key="PrimaryTextColor">#202124</Color>
-            <Color x:Key="SecondaryTextColor">#5f6368</Color>
             <Color x:Key="EntryBackgroundColor">#f1f3f4</Color>
             <Color x:Key="DisabledBackgroundColor">#e8eaed</Color>
+
+            <!-- Text Colors -->
+            <Color x:Key="PrimaryTextColor">#202124</Color>
+            <Color x:Key="SecondaryTextColor">#5f6368</Color>
+
+            <!-- Border Colors -->
             <Color x:Key="BorderColor">#dadce0</Color>
 
             <!-- Styles -->
@@ -64,7 +71,7 @@
 
             <Style x:Key="PrimaryButton" TargetType="Button">
                 <Setter Property="BackgroundColor" Value="{StaticResource PrimaryColor}" />
-                <Setter Property="TextColor" Value="Black" />
+                <Setter Property="TextColor" Value="White" />
                 <Setter Property="FontAttributes" Value="Bold" />
                 <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="15,10" />
@@ -73,7 +80,7 @@
 
             <Style x:Key="SecondaryButton" TargetType="Button">
                 <Setter Property="BackgroundColor" Value="{StaticResource SecondaryColor}" />
-                <Setter Property="TextColor" Value="Black" />
+                <Setter Property="TextColor" Value="White" />
                 <Setter Property="FontAttributes" Value="Bold" />
                 <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="15,10" />
@@ -93,7 +100,7 @@
 
             <Style x:Key="DangerButton" TargetType="Button">
                 <Setter Property="BackgroundColor" Value="{StaticResource ErrorColor}" />
-                <Setter Property="TextColor" Value="Black" />
+                <Setter Property="TextColor" Value="White" />
                 <Setter Property="FontAttributes" Value="Bold" />
                 <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="15,10" />
@@ -133,10 +140,7 @@
                 <Setter Property="TextColor" Value="{StaticResource SuccessColor}" />
                 <Setter Property="FontAttributes" Value="Italic" />
             </Style>
-            
-            
-           
-            
+
         </ResourceDictionary>
     </Application.Resources>
 </Application>

@@ -1,0 +1,369 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage x:Class="SEFApp.Views.ReportsPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             Title="Reports AND Analytics"
+             BackgroundColor="{DynamicResource PageBackgroundColor}">
+
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Export"
+                     IconImageSource="export.png"
+                     Command="{Binding ExportReportCommand}"
+                     Priority="0" />
+        <ToolbarItem Text="Refresh"
+                     IconImageSource="refresh.png"
+                     Command="{Binding RefreshCommand}"
+                     Priority="1" />
+    </ContentPage.ToolbarItems>
+
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="20">
+
+            <!-- Date Filter -->
+            <Frame BackgroundColor="{DynamicResource SurfaceColor}" CornerRadius="10" Padding="15">
+                <StackLayout Spacing="10">
+                    <Label Text="📅 Report Period" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                    <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="10">
+                        <DatePicker Grid.Column="0"
+                                    Date="{Binding StartDate}"
+                                    Format="yyyy-MM-dd"
+                                    BackgroundColor="{DynamicResource EntryBackgroundColor}"
+                                    TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                        <DatePicker Grid.Column="1"
+                                    Date="{Binding EndDate}"
+                                    Format="yyyy-MM-dd"
+                                    BackgroundColor="{DynamicResource EntryBackgroundColor}"
+                                    TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                        <Button Grid.Column="2"
+                                Text="Apply"
+                                BackgroundColor="{DynamicResource PrimaryColor}"
+                                TextColor="White"
+                                Command="{Binding ApplyDateFilterCommand}"/>
+                    </Grid>
+
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <Button Text="Today" 
+                                BackgroundColor="{DynamicResource InfoColor}" 
+                                TextColor="White" 
+                                FontSize="12"
+                                Command="{Binding SetTodayCommand}"/>
+                        <Button Text="This Week" 
+                                BackgroundColor="{DynamicResource InfoColor}" 
+                                TextColor="White" 
+                                FontSize="12"
+                                Command="{Binding SetThisWeekCommand}"/>
+                        <Button Text="This Month" 
+                                BackgroundColor="{DynamicResource InfoColor}" 
+                                TextColor="White" 
+                                FontSize="12"
+                                Command="{Binding SetThisMonthCommand}"/>
+                        <Button Text="This Year" 
+                                BackgroundColor="{DynamicResource InfoColor}" 
+                                TextColor="White" 
+                                FontSize="12"
+                                Command="{Binding SetThisYearCommand}"/>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+
+            <!-- Key Metrics Cards -->
+            <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+
+                <!-- Total Sales -->
+                <Frame Grid.Row="0" Grid.Column="0" BackgroundColor="{DynamicResource SuccessColor}" CornerRadius="10" Padding="15">
+                    <StackLayout Spacing="5">
+                        <Label Text="💰" FontSize="24" HorizontalOptions="Center"/>
+                        <Label Text="Total Sales" FontSize="14" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding TotalSales, StringFormat='€{0:F2}'}" 
+                               FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding SalesGrowth, StringFormat='{0:+0.0%;-0.0%;0%} from last period'}" 
+                               FontSize="10" TextColor="White" HorizontalOptions="Center"/>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Total Transactions -->
+                <Frame Grid.Row="0" Grid.Column="1" BackgroundColor="{DynamicResource InfoColor}" CornerRadius="10" Padding="15">
+                    <StackLayout Spacing="5">
+                        <Label Text="📊" FontSize="24" HorizontalOptions="Center"/>
+                        <Label Text="Transactions" FontSize="14" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding TotalTransactions}" 
+                               FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding TransactionGrowth, StringFormat='{0:+0.0%;-0.0%;0%} from last period'}" 
+                               FontSize="10" TextColor="White" HorizontalOptions="Center"/>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Average Sale -->
+                <Frame Grid.Row="1" Grid.Column="0" BackgroundColor="{DynamicResource WarningColor}" CornerRadius="10" Padding="15">
+                    <StackLayout Spacing="5">
+                        <Label Text="📈" FontSize="24" HorizontalOptions="Center"/>
+                        <Label Text="Avg. Sale" FontSize="14" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding AverageSale, StringFormat='€{0:F2}'}" 
+                               FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding AverageSaleGrowth, StringFormat='{0:+0.0%;-0.0%;0%} from last period'}" 
+                               FontSize="10" TextColor="White" HorizontalOptions="Center"/>
+                    </StackLayout>
+                </Frame>
+
+                <!-- Tax Collected -->
+                <Frame Grid.Row="1" Grid.Column="1" BackgroundColor="{DynamicResource ErrorColor}" CornerRadius="10" Padding="15">
+                    <StackLayout Spacing="5">
+                        <Label Text="🏛️" FontSize="24" HorizontalOptions="Center"/>
+                        <Label Text="Tax Collected" FontSize="14" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding TotalTax, StringFormat='€{0:F2}'}" 
+                               FontSize="20" FontAttributes="Bold" TextColor="White" HorizontalOptions="Center"/>
+                        <Label Text="{Binding TaxGrowth, StringFormat='{0:+0.0%;-0.0%;0%} from last period'}" 
+                               FontSize="10" TextColor="White" HorizontalOptions="Center"/>
+                    </StackLayout>
+                </Frame>
+            </Grid>
+
+            <!-- Sales Chart (Placeholder) -->
+            <Frame BackgroundColor="{DynamicResource SurfaceColor}" CornerRadius="10" Padding="15">
+                <StackLayout Spacing="10">
+                    <Label Text="📈 Sales Trend" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                    <!-- Simple chart representation -->
+                    <Frame BackgroundColor="{DynamicResource EntryBackgroundColor}" HeightRequest="200" Padding="20">
+                        <StackLayout VerticalOptions="Center" HorizontalOptions="Center">
+                            <Label Text="📊" FontSize="48"/>
+                            <Label Text="Sales Chart" 
+                                   FontSize="16" 
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource PrimaryTextColor}"/>
+                            <Label Text="Interactive chart will be implemented" 
+                                   FontSize="12" 
+                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+                            <Label Text="with a charting library like Syncfusion or OxyPlot" 
+                                   FontSize="10" 
+                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+                        </StackLayout>
+                    </Frame>
+                </StackLayout>
+            </Frame>
+
+            <!-- Top Products -->
+            <Frame BackgroundColor="{DynamicResource SurfaceColor}" CornerRadius="10" Padding="15">
+                <StackLayout Spacing="10">
+                    <Label Text="🏆 Top Selling Products" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                    <CollectionView ItemsSource="{Binding TopProducts}" HeightRequest="300">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="10" ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="10">
+                                    <Label Grid.Column="0" 
+                                           Text="{Binding Rank}" 
+                                           FontSize="16" 
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource PrimaryColor}"
+                                           VerticalOptions="Center"/>
+
+                                    <StackLayout Grid.Column="1">
+                                        <Label Text="{Binding ProductName}" 
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource PrimaryTextColor}"/>
+                                        <Label Text="{Binding ProductCode}" 
+                                               FontSize="12" 
+                                               TextColor="{DynamicResource SecondaryTextColor}"/>
+                                    </StackLayout>
+
+                                    <StackLayout Grid.Column="2" HorizontalOptions="End">
+                                        <Label Text="{Binding QuantitySold, StringFormat='{0} sold'}" 
+                                               FontSize="12"
+                                               TextColor="{DynamicResource SecondaryTextColor}"/>
+                                        <Label Text="{Binding Revenue, StringFormat='€{0:F2}'}" 
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource PrimaryTextColor}"/>
+                                    </StackLayout>
+
+                                    <ProgressBar Grid.Column="3" 
+                                                 Progress="{Binding SalesPercentage}" 
+                                                 ProgressColor="{DynamicResource PrimaryColor}"
+                                                 WidthRequest="50"
+                                                 VerticalOptions="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+            <!-- Payment Methods Breakdown -->
+            <Frame BackgroundColor="{DynamicResource SurfaceColor}" CornerRadius="10" Padding="15">
+                <StackLayout Spacing="10">
+                    <Label Text="💳 Payment Methods" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                    <CollectionView ItemsSource="{Binding PaymentMethodStats}" HeightRequest="200">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Grid Padding="10" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="15">
+                                    <Label Grid.Column="0" 
+                                           Text="{Binding Icon}" 
+                                           FontSize="20" 
+                                           VerticalOptions="Center"/>
+
+                                    <StackLayout Grid.Column="1">
+                                        <Label Text="{Binding PaymentMethod}" 
+                                               FontAttributes="Bold"
+                                               TextColor="{DynamicResource PrimaryTextColor}"/>
+                                        <StackLayout Orientation="Horizontal">
+                                            <Label Text="{Binding TransactionCount, StringFormat='{0} transactions'}" 
+                                                   FontSize="12" 
+                                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+                                            <Label Text="{Binding Percentage, StringFormat='({0:P0})'}" 
+                                                   FontSize="12" 
+                                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+                                        </StackLayout>
+                                    </StackLayout>
+
+                                    <Label Grid.Column="2" 
+                                           Text="{Binding Amount, StringFormat='€{0:F2}'}" 
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource PrimaryTextColor}"
+                                           VerticalOptions="Center"/>
+                                </Grid>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+            <!-- Sales by Hour -->
+            <Frame BackgroundColor="{DynamicResource SurfaceColor}" CornerRadius="10" Padding="15">
+                <StackLayout Spacing="10">
+                    <Label Text="⏰ Sales by Hour" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                    <CollectionView ItemsSource="{Binding SalesByHour}" 
+                                    ItemsLayout="HorizontalList"
+                                    HeightRequest="100">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <StackLayout Padding="5" HorizontalOptions="Center">
+                                    <Rectangle Fill="{DynamicResource PrimaryColor}" 
+                                               HeightRequest="{Binding BarHeight}"
+                                               WidthRequest="20"
+                                               VerticalOptions="End"/>
+                                    <Label Text="{Binding Hour, StringFormat='{0}h'}" 
+                                           FontSize="10" 
+                                           TextColor="{DynamicResource SecondaryTextColor}"
+                                           HorizontalOptions="Center"/>
+                                    <Label Text="{Binding Amount, StringFormat='€{0:F0}'}" 
+                                           FontSize="8" 
+                                           TextColor="{DynamicResource SecondaryTextColor}"
+                                           HorizontalOptions="Center"/>
+                                </StackLayout>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+            <!-- Recent Transactions -->
+            <Frame BackgroundColor="{DynamicResource SurfaceColor}" CornerRadius="10" Padding="15">
+                <StackLayout Spacing="10">
+                    <StackLayout Orientation="Horizontal">
+                        <Label Text="📋 Recent Transactions" 
+                               FontSize="18" 
+                               FontAttributes="Bold" 
+                               TextColor="{DynamicResource PrimaryTextColor}"
+                               HorizontalOptions="StartAndExpand"/>
+                        <Button Text="View All" 
+                                BackgroundColor="Transparent" 
+                                TextColor="{DynamicResource PrimaryColor}"
+                                FontSize="12"
+                                Command="{Binding ViewAllTransactionsCommand}"/>
+                    </StackLayout>
+
+                    <CollectionView ItemsSource="{Binding RecentTransactions}" HeightRequest="300">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame BackgroundColor="{DynamicResource EntryBackgroundColor}" Margin="0,2" Padding="10">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <StackLayout Grid.Column="0" VerticalOptions="Center" Margin="0,0,10,0">
+                                            <Label Text="{Binding PaymentMethod, Converter={StaticResource TransactionStatusIconConverter}}" FontSize="20"/>
+                                            <Label Text="{Binding Status}" 
+                                                   FontSize="8" 
+                                                   TextColor="{DynamicResource SecondaryTextColor}"
+                                                   HorizontalOptions="Center"/>
+                                        </StackLayout>
+
+                                        <StackLayout Grid.Column="1">
+                                            <Label Text="{Binding TransactionNumber}" 
+                                                   FontAttributes="Bold"
+                                                   TextColor="{DynamicResource PrimaryTextColor}"/>
+                                            <Label Text="{Binding CustomerName}" 
+                                                   FontSize="12" 
+                                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+                                            <Label Text="{Binding TransactionDate, StringFormat='{0:MM/dd HH:mm}'}" 
+                                                   FontSize="10" 
+                                                   TextColor="{DynamicResource SecondaryTextColor}"/>
+                                        </StackLayout>
+
+                                        <StackLayout Grid.Column="2" HorizontalOptions="End">
+                                            <Label Text="{Binding TotalAmount, StringFormat='€{0:F2}'}" 
+                                                   FontAttributes="Bold" 
+                                                   TextColor="{DynamicResource PrimaryTextColor}"
+                                                   HorizontalOptions="End"/>
+                                            <Label Text="{Binding PaymentMethod}" 
+                                                   FontSize="10" 
+                                                   TextColor="{DynamicResource SecondaryTextColor}"
+                                                   HorizontalOptions="End"/>
+                                        </StackLayout>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </StackLayout>
+            </Frame>
+
+            <!-- Export Options -->
+            <Frame BackgroundColor="{DynamicResource SurfaceColor}" CornerRadius="10" Padding="15">
+                <StackLayout Spacing="10">
+                    <Label Text="📤 Export Reports" 
+                           FontSize="18" 
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource PrimaryTextColor}"/>
+
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="10">
+                        <Button Grid.Column="0"
+                                Text="📄 Export PDF"
+                                BackgroundColor="{DynamicResource ErrorColor}"
+                                TextColor="White"
+                                Command="{Binding ExportPdfCommand}"/>
+
+                        <Button Grid.Column="1"
+                                Text="📊 Export Excel"
+                                BackgroundColor="{DynamicResource SuccessColor}"
+                                TextColor="White"
+                                Command="{Binding ExportExcelCommand}"/>
+                    </Grid>
+
+                    <Button Text="📧 Email Report"
+                            BackgroundColor="{DynamicResource InfoColor}"
+                            TextColor="White"
+                            Command="{Binding EmailReportCommand}"/>
+                </StackLayout>
+            </Frame>
+
+        </StackLayout>
+    </ScrollView>
+</ContentPage>

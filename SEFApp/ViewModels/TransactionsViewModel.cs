@@ -22,8 +22,14 @@ namespace SEFApp.ViewModels
             _navigationService = navigationService;
             _alertService = alertService;
 
+            System.Diagnostics.Debug.WriteLine("TransactionsViewModel created");
+            System.Diagnostics.Debug.WriteLine($"NavigationService is null: {_navigationService == null}");
+
             InitializeCommands();
-            LoadTransactions();
+            InitializeData();
+
+            // Load transactions immediately
+            _ = Task.Run(async () => await LoadTransactions());
         }
 
         #region Properties
@@ -57,7 +63,12 @@ namespace SEFApp.ViewModels
             {
                 if (SetProperty(ref _searchText, value))
                 {
-                    FilterTransactions();
+                    // Use Task.Run to avoid blocking UI and prevent multiple rapid calls
+                    _ = Task.Run(async () =>
+                    {
+                        await Task.Delay(300); // Debounce search
+                        await MainThread.InvokeOnMainThreadAsync(() => FilterTransactions());
+                    });
                 }
             }
         }
@@ -100,7 +111,7 @@ namespace SEFApp.ViewModels
         // Options
         public ObservableCollection<string> StatusOptions { get; set; } = new ObservableCollection<string>
         {
-            "All", "Completed", "Pending", "Cancelled", "Refunded"
+            "All", "Completed", "Pending", "Cancelled", "Refunded", "Draft"
         };
 
         #endregion
@@ -126,6 +137,19 @@ namespace SEFApp.ViewModels
             FilterByDateCommand = new Command(async () => await FilterByDate());
             ViewTransactionCommand = new Command<Transaction>(async (transaction) => await ViewTransaction(transaction));
             PrintReceiptCommand = new Command<Transaction>(async (transaction) => await PrintReceipt(transaction));
+
+            System.Diagnostics.Debug.WriteLine($"NewTransactionCommand created: {NewTransactionCommand != null}");
+        }
+
+        private void InitializeData()
+        {
+            Transactions.Clear();
+            FilteredTransactions.Clear();
+
+            // Reset summary data
+            TodayCount = 0;
+            TodayRevenue = 0;
+            TotalTransactions = 0;
         }
 
         #endregion
@@ -137,25 +161,40 @@ namespace SEFApp.ViewModels
             try
             {
                 IsLoading = true;
+                System.Diagnostics.Debug.WriteLine("Loading transactions...");
 
-                // Load transactions from database
-                var transactions = await _databaseService.GetTransactionsByDateRangeAsync(
-                    DateTime.Today.AddDays(-30), DateTime.Today.AddDays(1));
+                // Load transactions from the last 30 days
+                var endDate = DateTime.Today.AddDays(1);
+                var startDate = DateTime.Today.AddDays(-30);
 
-                Transactions.Clear();
-                foreach (var transaction in transactions.OrderByDescending(t => t.TransactionDate))
+                var transactions = await _databaseService.GetTransactionsByDateRangeAsync(startDate, endDate);
+
+                await MainThread.InvokeOnMainThreadAsync(() =>
                 {
-                    Transactions.Add(transaction);
-                }
+                    // Clear existing transactions first
+                    Transactions.Clear();
+                    FilteredTransactions.Clear();
+
+                    // Add new transactions
+                    foreach (var transaction in transactions)
+                    {
+                        Transactions.Add(transaction);
+                    }
+
+                    System.Diagnostics.Debug.WriteLine($"Added {transactions.Count} transactions to collection");
+                });
 
                 // Load summary data
                 await LoadSummaryData();
 
-                // Apply current filters
-                FilterTransactions();
+                // Apply current filters ONCE after loading
+                await MainThread.InvokeOnMainThreadAsync(() => FilterTransactions());
+
+                System.Diagnostics.Debug.WriteLine($"Loaded {transactions.Count} transactions");
             }
             catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine($"LoadTransactions error: {ex.Message}");
                 await _alertService.ShowErrorAsync($"Failed to load transactions: {ex.Message}");
             }
             finally
@@ -172,12 +211,18 @@ namespace SEFApp.ViewModels
                 TodayCount = await _databaseService.GetTodaysTransactionCountAsync();
                 TodayRevenue = await _databaseService.GetTodaysRevenueAsync();
 
-                // Total transactions
+                // Total transactions in current view
                 TotalTransactions = Transactions.Count;
+
+                System.Diagnostics.Debug.WriteLine($"Summary - Today: {TodayCount} transactions, €{TodayRevenue:F2} revenue");
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine($"Failed to load summary data: {ex.Message}");
+                // Set default values
+                TodayCount = 0;
+                TodayRevenue = 0;
+                TotalTransactions = 0;
             }
         }
 
@@ -185,6 +230,10 @@ namespace SEFApp.ViewModels
         {
             try
             {
+                System.Diagnostics.Debug.WriteLine($"Filtering transactions. Search: '{SearchText}', Status: '{SelectedStatus}'");
+                System.Diagnostics.Debug.WriteLine($"Source transactions count: {Transactions.Count}");
+
+                // Clear filtered transactions first
                 FilteredTransactions.Clear();
 
                 var filtered = Transactions.AsEnumerable();
@@ -193,9 +242,9 @@ namespace SEFApp.ViewModels
                 if (!string.IsNullOrWhiteSpace(SearchText))
                 {
                     filtered = filtered.Where(t =>
-                        t.TransactionNumber.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                        t.CustomerName.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                        t.PaymentMethod.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
+                        (t.TransactionNumber?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (t.CustomerName?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false) ||
+                        (t.PaymentMethod?.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ?? false));
                 }
 
                 // Filter by status
@@ -204,10 +253,16 @@ namespace SEFApp.ViewModels
                     filtered = filtered.Where(t => t.Status == SelectedStatus);
                 }
 
+                // Order by date (newest first)
+                filtered = filtered.OrderByDescending(t => t.TransactionDate);
+
+                // Add filtered transactions to collection
                 foreach (var transaction in filtered)
                 {
                     FilteredTransactions.Add(transaction);
                 }
+
+                System.Diagnostics.Debug.WriteLine($"Filtered to {FilteredTransactions.Count} transactions");
             }
             catch (Exception ex)
             {
@@ -219,11 +274,23 @@ namespace SEFApp.ViewModels
         {
             try
             {
-                await _navigationService.NavigateToAsync("NewTransactionPage");
+                System.Diagnostics.Debug.WriteLine("Navigating to Point of Sale...");
+
+                if (_navigationService == null)
+                {
+                    System.Diagnostics.Debug.WriteLine("NavigationService is null!");
+                    await _alertService.ShowErrorAsync("Navigation service not available");
+                    return;
+                }
+
+                // Navigate to Point of Sale instead of NewTransactionPage
+                await _navigationService.NavigateToAsync("SalesPage");
+                System.Diagnostics.Debug.WriteLine("Navigation to SalesPage executed successfully");
             }
             catch (Exception ex)
             {
-                await _alertService.ShowErrorAsync($"Failed to create new transaction: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine($"Navigation error: {ex.Message}");
+                await _alertService.ShowErrorAsync($"Failed to open point of sale: {ex.Message}");
             }
         }
 
@@ -246,8 +313,23 @@ namespace SEFApp.ViewModels
 
             try
             {
-                // Navigate to transaction detail page
-                await _navigationService.NavigateToAsync($"TransactionDetailPage?id={transaction.Id}");
+                System.Diagnostics.Debug.WriteLine($"Viewing transaction: {transaction.TransactionNumber}");
+
+                // Show transaction details
+                var details = $@"
+Transaction: {transaction.TransactionNumber}
+Date: {transaction.TransactionDate:yyyy-MM-dd HH:mm}
+Customer: {transaction.CustomerName}
+Payment: {transaction.PaymentMethod}
+Status: {transaction.Status}
+
+Subtotal: €{transaction.SubTotal:F2}
+Tax: €{transaction.TaxAmount:F2}
+Total: €{transaction.TotalAmount:F2}
+
+Notes: {transaction.Notes}";
+
+                await _alertService.ShowAlertAsync("Transaction Details", details, "Close");
             }
             catch (Exception ex)
             {
@@ -261,8 +343,29 @@ namespace SEFApp.ViewModels
 
             try
             {
-                await _alertService.ShowAlertAsync("Print Receipt",
-                    $"Receipt printing for transaction {transaction.TransactionNumber} will be implemented in the next version");
+                System.Diagnostics.Debug.WriteLine($"Printing receipt for: {transaction.TransactionNumber}");
+
+                // Generate receipt content
+                var receiptContent = $@"
+═══════════════════════════════
+          FISCAL RECEIPT
+═══════════════════════════════
+
+Transaction: {transaction.TransactionNumber}
+Date: {transaction.TransactionDate:yyyy-MM-dd HH:mm:ss}
+Customer: {transaction.CustomerName}
+Payment: {transaction.PaymentMethod}
+
+───────────────────────────────
+Subtotal:     €{transaction.SubTotal:F2}
+Tax (18%):    €{transaction.TaxAmount:F2}
+───────────────────────────────
+TOTAL:        €{transaction.TotalAmount:F2}
+
+Thank you for your business!
+═══════════════════════════════";
+
+                await _alertService.ShowAlertAsync("Receipt", receiptContent, "Close");
             }
             catch (Exception ex)
             {
