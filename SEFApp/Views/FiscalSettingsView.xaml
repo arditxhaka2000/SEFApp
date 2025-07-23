@@ -1,0 +1,195 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="SEFApp.Views.FiscalSettingsView"
+             Title="Fiscal System Configuration"
+             BackgroundColor="{StaticResource PageBackgroundColor}">
+
+    <ScrollView>
+        <StackLayout Padding="20" Spacing="20">
+
+            <!-- Header -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="10">
+                    <Label Text="ATK Fiscal System Configuration" 
+                           Style="{StaticResource HeaderLabel}"
+                           HorizontalOptions="Center"/>
+                    <Label Text="Configure your connection to Kosovo Tax Administration" 
+                           Style="{StaticResource BodyLabel}"
+                           HorizontalOptions="Center"/>
+                </StackLayout>
+            </Frame>
+
+            <!-- Status -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="10">
+                    <Label Text="Configuration Status" Style="{StaticResource SubHeaderLabel}"/>
+
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <Label Text="Status:" Style="{StaticResource BodyLabel}" FontAttributes="Bold"/>
+                        <Label Text="{Binding ConfigurationStatus}" 
+                               Style="{StaticResource BodyLabel}"
+                               TextColor="{Binding StatusColor}"/>
+                    </StackLayout>
+
+                    <StackLayout Orientation="Horizontal" Spacing="10">
+                        <Label Text="Environment:" Style="{StaticResource BodyLabel}" FontAttributes="Bold"/>
+                        <Label Text="{Binding Environment}" Style="{StaticResource BodyLabel}"/>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+
+            <!-- Business Information -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="15">
+                    <Label Text="Business Information" Style="{StaticResource SubHeaderLabel}"/>
+
+                    <StackLayout Spacing="10">
+                        <Label Text="Business ID (NUI):" Style="{StaticResource BodyLabel}"/>
+                        <Entry Text="{Binding BusinessId}" 
+                               Style="{StaticResource StandardEntry}"
+                               Placeholder="Enter your NUI number"/>
+
+                        <Label Text="Fiscalization Number:" Style="{StaticResource BodyLabel}"/>
+                        <Entry Text="{Binding FiscalizationNumber}" 
+                               Style="{StaticResource StandardEntry}"
+                               Placeholder="From EDI system"/>
+
+                        <Label Text="POS ID:" Style="{StaticResource BodyLabel}"/>
+                        <Entry Text="{Binding PosId}" 
+                               Style="{StaticResource StandardEntry}"
+                               Placeholder="Unique POS identifier"/>
+
+                        <Label Text="Branch ID:" Style="{StaticResource BodyLabel}"/>
+                        <Entry Text="{Binding BranchId}" 
+                               Style="{StaticResource StandardEntry}"
+                               Placeholder="Branch identifier"/>
+
+                        <Label Text="Application ID:" Style="{StaticResource BodyLabel}"/>
+                        <Entry Text="{Binding ApplicationId}" 
+                               Style="{StaticResource StandardEntry}"
+                               Placeholder="From ATK certification"/>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+
+            <!-- Certificate Status -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="15">
+                    <Label Text="Digital Certificate" Style="{StaticResource SubHeaderLabel}"/>
+
+                    <StackLayout Spacing="10">
+                        <StackLayout Orientation="Horizontal" Spacing="10">
+                            <Label Text="Certificate Status:" 
+                                   Style="{StaticResource BodyLabel}" 
+                                   FontAttributes="Bold"/>
+                            <Label Text="{Binding CertificateStatus}" 
+                                   Style="{StaticResource BodyLabel}"
+                                   TextColor="{Binding CertificateStatusColor}"/>
+                        </StackLayout>
+
+                        <StackLayout Orientation="Horizontal" Spacing="10">
+                            <Label Text="Private Key:" 
+                                   Style="{StaticResource BodyLabel}" 
+                                   FontAttributes="Bold"/>
+                            <Label Text="{Binding PrivateKeyStatus}" 
+                                   Style="{StaticResource BodyLabel}"
+                                   TextColor="{Binding PrivateKeyStatusColor}"/>
+                        </StackLayout>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+
+            <!-- Environment Selection -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="15">
+                    <Label Text="Environment Settings" Style="{StaticResource SubHeaderLabel}"/>
+
+                    <StackLayout Spacing="10">
+                        <Label Text="Select Environment:" Style="{StaticResource BodyLabel}"/>
+                        <Picker ItemsSource="{Binding Environments}"
+                                SelectedItem="{Binding SelectedEnvironment}"
+                                Style="{StaticResource StandardPicker}"/>
+
+                        <StackLayout Orientation="Horizontal" Spacing="10">
+                            <Label Text="API URL:" 
+                                   Style="{StaticResource BodyLabel}" 
+                                   FontAttributes="Bold"/>
+                            <Label Text="{Binding ApiUrl}" 
+                                   Style="{StaticResource BodyLabel}"
+                                   FontSize="12"/>
+                        </StackLayout>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+
+            <!-- Actions -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="15">
+                    <Label Text="Actions" Style="{StaticResource SubHeaderLabel}"/>
+
+                    <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="10">
+
+                        <Button Grid.Row="0" Grid.Column="0"
+                                Text="Test Connection"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding TestConnectionCommand}"
+                                IsEnabled="{Binding IsNotProcessing}"/>
+
+                        <Button Grid.Row="0" Grid.Column="1"
+                                Text="Start Onboarding"
+                                Style="{StaticResource PrimaryButton}"
+                                Command="{Binding StartOnboardingCommand}"
+                                IsEnabled="{Binding CanStartOnboarding}"/>
+
+                        <Button Grid.Row="1" Grid.Column="0"
+                                Text="Export Certificate"
+                                Style="{StaticResource OutlineButton}"
+                                Command="{Binding ExportCertificateCommand}"
+                                IsEnabled="{Binding HasCertificate}"/>
+
+                        <Button Grid.Row="1" Grid.Column="1"
+                                Text="Reset Configuration"
+                                Style="{StaticResource DangerButton}"
+                                Command="{Binding ResetConfigurationCommand}"
+                                IsEnabled="{Binding IsNotProcessing}"/>
+                    </Grid>
+                </StackLayout>
+            </Frame>
+
+            <!-- Processing Indicator -->
+            <Frame Style="{StaticResource CardFrame}" IsVisible="{Binding IsProcessing}">
+                <StackLayout Spacing="10" Orientation="Horizontal" HorizontalOptions="Center">
+                    <ActivityIndicator IsRunning="True" Color="{StaticResource PrimaryColor}"/>
+                    <Label Text="{Binding ProcessingMessage}" 
+                           Style="{StaticResource BodyLabel}"
+                           FontAttributes="Italic"/>
+                </StackLayout>
+            </Frame>
+
+            <!-- Recent Transactions Test -->
+            <Frame Style="{StaticResource CardFrame}">
+                <StackLayout Spacing="15">
+                    <Label Text="Test Fiscalization" Style="{StaticResource SubHeaderLabel}"/>
+
+                    <StackLayout Spacing="10">
+                        <Label Text="Send a test transaction to verify your fiscal setup:" 
+                               Style="{StaticResource BodyLabel}"/>
+
+                        <Button Text="Send Test Transaction"
+                                Style="{StaticResource SecondaryButton}"
+                                Command="{Binding SendTestTransactionCommand}"
+                                IsEnabled="{Binding CanSendTest}"/>
+
+                        <Label Text="{Binding LastTestResult}" 
+                               Style="{StaticResource BodyLabel}"
+                               FontSize="12"
+                               IsVisible="{Binding HasTestResult}"/>
+                    </StackLayout>
+                </StackLayout>
+            </Frame>
+
+        </StackLayout>
+    </ScrollView>
+
+</ContentPage>

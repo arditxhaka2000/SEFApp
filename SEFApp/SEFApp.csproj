@@ -3,15 +3,6 @@
 	<PropertyGroup>
 		<TargetFrameworks>net8.0-android;net8.0-ios;net8.0-maccatalyst</TargetFrameworks>
 		<TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net8.0-windows10.0.19041.0</TargetFrameworks>
-		<!-- Uncomment to also build the tizen app. You will need to install tizen by following this: https://github.com/Samsung/Tizen.NET -->
-		<!-- <TargetFrameworks>$(TargetFrameworks);net8.0-tizen</TargetFrameworks> -->
-
-		<!-- Note for MacCatalyst:
-		The default runtime is maccatalyst-x64, except in Release config, in which case the default is maccatalyst-x64;maccatalyst-arm64.
-		When specifying both architectures, use the plural <RuntimeIdentifiers> instead of the singular <RuntimeIdentifier>.
-		The Mac App Store will NOT accept apps with ONLY maccatalyst-arm64 indicated;
-		either BOTH runtimes must be indicated or ONLY macatalyst-x64. -->
-		<!-- For example: <RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers> -->
 
 		<OutputType>Exe</OutputType>
 		<RootNamespace>SEFApp</RootNamespace>
@@ -56,20 +47,28 @@
 		<MauiAsset Include="Resources\Raw\**" LogicalName="%(RecursiveDir)%(Filename)%(Extension)" />
 	</ItemGroup>
 
+	<!-- Protobuf files -->
 	<ItemGroup>
+		<PackageReference Include="Google.Protobuf" Version="3.31.1" />
+		<PackageReference Include="Google.Protobuf.Tools" Version="3.25.1" PrivateAssets="All" />
+		<PackageReference Include="Grpc.Tools" Version="2.72.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
 		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.6" />
 		<PackageReference Include="Microsoft.Maui.Controls" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Maui.Controls.Compatibility" Version="$(MauiVersion)" />
 		<PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="8.0.1" />
+		<PackageReference Include="System.Formats.Asn1" Version="9.0.7" />
+		<PackageReference Include="System.Security.Cryptography.Csp" Version="4.3.0" />
 		<PackageReference Include="System.Security.Cryptography.ProtectedData" Version="9.0.6" />
-
-		<!-- SQLCipher - SIMPLEST APPROACH -->
 		<PackageReference Include="sqlite-net-sqlcipher" Version="1.9.172" />
 	</ItemGroup>
-
+	<!--<ItemGroup>
+		<Protobuf Include="Proto\models.proto" GrpcServices="None" />
+	</ItemGroup>-->
 	<ItemGroup>
 		<Folder Include="Models\Application\" />
-		<Folder Include="Models\Fiscal\" />
 		<Folder Include="Models\Certification\" />
 		<Folder Include="Models\Documents\" />
 		<Folder Include="Data\" />
@@ -77,7 +76,6 @@
 		<Folder Include="Controls\" />
 		<Folder Include="Utilities\" />
 	</ItemGroup>
-
 	<ItemGroup>
 		<Compile Update="Views\AddProductModal.xaml.cs">
 		  <DependentUpon>AddProductModal.xaml</DependentUpon>
@@ -96,6 +94,9 @@
 		</MauiXaml>
 		<MauiXaml Update="Views\DashboardPage.xaml">
 			<Generator>MSBuild:Compile</Generator>
+		</MauiXaml>
+		<MauiXaml Update="Views\FiscalSettingsView.xaml">
+		  <Generator>MSBuild:Compile</Generator>
 		</MauiXaml>
 		<MauiXaml Update="Views\LoginPage.xaml">
 			<Generator>MSBuild:Compile</Generator>

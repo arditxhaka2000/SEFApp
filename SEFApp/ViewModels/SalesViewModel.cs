@@ -12,17 +12,24 @@ namespace SEFApp.ViewModels
         private readonly IDatabaseService _databaseService;
         private readonly IAlertService _alertService;
         private readonly IAuthenticationService _authService;
-
+        private readonly IFiscalService _fiscalService;
+        private readonly ITransactionFiscalService _transactionFiscalService;
         public SalesViewModel(
             IDatabaseService databaseService,
             IAlertService alertService,
-            IAuthenticationService authService)
+            IAuthenticationService authService,
+            IFiscalService fiscalService = null,
+            ITransactionFiscalService transactionFiscalService = null)
         {
             _databaseService = databaseService;
             _alertService = alertService;
             _authService = authService;
+            _fiscalService = fiscalService;
+            _transactionFiscalService = transactionFiscalService;
 
             InitializeCommands();
+            System.Diagnostics.Debug.WriteLine($"Commands initialized. ProcessPaymentCommand is null: {ProcessPaymentCommand == null}");
+
             InitializeData();
             LoadProducts();
         }
@@ -101,6 +108,7 @@ namespace SEFApp.ViewModels
                 {
                     OnPropertyChanged(nameof(IsCashPayment));
                     CalculateChange();
+                    ((Command)ProcessPaymentCommand).ChangeCanExecute();
                 }
             }
         }
@@ -186,7 +194,14 @@ namespace SEFApp.ViewModels
             IncreaseQuantityCommand = new Command<CartItem>((item) => IncreaseQuantity(item));
             DecreaseQuantityCommand = new Command<CartItem>((item) => DecreaseQuantity(item));
             ClearCartCommand = new Command(async () => await ClearCart());
-            ProcessPaymentCommand = new Command(async () => await ProcessPayment());
+            ProcessPaymentCommand = new Command(async () =>
+            {
+                System.Diagnostics.Debug.WriteLine("ProcessPaymentCommand executed!");
+                await ProcessPayment();
+            });
+
+            System.Diagnostics.Debug.WriteLine($"ProcessPaymentCommand created: {ProcessPaymentCommand != null}");
+
             SaveDraftCommand = new Command(async () => await SaveDraft());
             NewSaleCommand = new Command(() => StartNewSale());
             PrintLastReceiptCommand = new Command(async () => await PrintLastReceipt());
@@ -417,7 +432,19 @@ namespace SEFApp.ViewModels
                     TotalAmount = TotalAmount,
                     Status = "Completed",
                     CreatedDate = DateTime.Now,
-                    UserId = (await _authService.GetCurrentUserAsync())?.Id ?? 1
+                    UserId = (await _authService.GetCurrentUserAsync())?.Id ?? 1,
+                    Items = CartItems.Select(cartItem => new TransactionItem
+                    {
+                        ProductId = cartItem.Product.Id,
+                        ProductCode = cartItem.Product.ProductCode,
+                        ProductName = cartItem.Product.Name,
+                        Quantity = cartItem.Quantity,
+                        UnitPrice = cartItem.UnitPrice,
+                        TotalAmount = cartItem.TotalPrice,
+                        TaxRate = TaxRate * 100,
+                        TaxAmount = cartItem.UnitPrice * cartItem.Quantity * TaxRate,
+                        CreatedDate = DateTime.Now
+                    }).ToList()
                 };
 
                 ProcessingMessage = "Creating transaction record...";
@@ -445,7 +472,19 @@ namespace SEFApp.ViewModels
                         };
 
                         await _databaseService.CreateTransactionItemAsync(transactionItem);
-
+                        ProcessingMessage = "Processing fiscal receipt...";
+                        if (_fiscalService != null && _transactionFiscalService != null)
+                        {
+                            try
+                            {
+                                await _transactionFiscalService.ProcessTransactionForFiscalizationAsync(savedTransaction);
+                            }
+                            catch (Exception fiscalEx)
+                            {
+                                System.Diagnostics.Debug.WriteLine($"Fiscal processing failed: {fiscalEx.Message}");
+                                // Don't fail the whole transaction, just log the error
+                            }
+                        }
                         // Update product stock
                         var newStock = cartItem.Product.Stock - cartItem.Quantity;
                         await _databaseService.UpdateProductStockAsync(cartItem.Product.Id, newStock);
@@ -574,7 +613,7 @@ namespace SEFApp.ViewModels
             OnPropertyChanged(nameof(TotalAmount));
             OnPropertyChanged(nameof(HasCartItems));
             OnPropertyChanged(nameof(CanProcessPayment));
-
+            ((Command)ProcessPaymentCommand).ChangeCanExecute();
             CalculateChange();
         }
 

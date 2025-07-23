@@ -1,0 +1,73 @@
+﻿syntax = "proto3";
+package atk;
+option csharp_namespace = "SEFApp.Proto";
+
+// Enums
+enum CouponType {
+    COUPON_TYPE_UNSPECIFIED = 0;
+    Sale = 1;
+}
+
+enum PaymentType {
+    PAYMENT_TYPE_UNSPECIFIED = 0;
+    Cash = 1;
+    CreditCard = 2;
+    Voucher = 3;
+}
+
+// Messages
+message CouponItem {
+    string name = 1;
+    int64 price = 2;        
+    string unit = 3;
+    float quantity = 4;
+    int64 total = 5;        
+    string tax_rate = 6;    
+    string type = 7;
+}
+
+message Payment {
+    PaymentType type = 1;
+    int64 amount = 2;       
+}
+
+message TaxGroup {
+    string tax_rate = 1;    
+    int64 total_for_tax = 2;
+    int64 total_tax = 3;    
+}
+
+message PosCoupon {
+    uint64 business_id = 1;
+    uint64 coupon_id = 2;
+    uint64 branch_id = 3;
+    string location = 4;
+    string operator_id = 5;
+    uint64 pos_id = 6;
+    uint64 application_id = 7;
+    string verification_no = 8;
+    CouponType type = 9;
+    int64 time = 10;        
+    repeated CouponItem items = 11;
+    repeated Payment payments = 12;
+    int64 total = 13;
+    repeated TaxGroup tax_groups = 14;
+    int64 total_tax = 15;
+    int64 total_no_tax = 16;
+    uint64 reference_no = 17;
+    int64 total_discount = 18;
+}
+
+message CitizenCoupon {
+    uint64 business_id = 1;
+    uint64 pos_id = 2;
+    uint64 coupon_id = 3;
+    uint64 branch_id = 4;
+    CouponType type = 5;
+    int64 time = 6;
+    int64 total = 7;
+    repeated TaxGroup tax_groups = 8;
+    int64 total_tax = 9;
+    int64 total_no_tax = 10;
+    int64 total_discount = 11;
+}

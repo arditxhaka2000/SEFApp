@@ -25,7 +25,10 @@ namespace SEFApp
             });
 #endif
 
-            // Register Services (Order matters for dependencies)
+            // Register HttpClient for fiscal services
+            builder.Services.AddHttpClient();
+
+            // Register Core Services (Order matters for dependencies)
             builder.Services.AddSingleton<IPreferencesService, PreferencesService>();
             builder.Services.AddSingleton<IDatabaseService, DatabaseService>();
             builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
@@ -34,6 +37,11 @@ namespace SEFApp
             // Register NavigationService with IServiceProvider access
             builder.Services.AddSingleton<INavigationService>(serviceProvider =>
                 new NavigationService(serviceProvider));
+
+            // Register Fiscal Services
+            builder.Services.AddSingleton<IFiscalCertificateService, FiscalCertificateService>();
+            builder.Services.AddSingleton<IFiscalService, FiscalService>();
+            builder.Services.AddSingleton<ITransactionFiscalService, TransactionFiscalService>();
 
             // Register AppShell
             builder.Services.AddSingleton<AppShell>();
@@ -44,9 +52,10 @@ namespace SEFApp
             builder.Services.AddTransient<ProductViewModel>();
             builder.Services.AddTransient<AddProductModalViewModel>();
             builder.Services.AddTransient<TransactionsViewModel>();
-            builder.Services.AddTransient<SalesViewModel>();
+            builder.Services.AddTransient<SalesViewModel>(); // Updated with fiscal integration
             builder.Services.AddTransient<ReportsViewModel>();
             builder.Services.AddTransient<NewTransactionViewModel>();
+
             // Register Views
             builder.Services.AddTransient<LoginPage>();
             builder.Services.AddTransient<DashboardPage>();
